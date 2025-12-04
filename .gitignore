@@ -1,1 +1,4 @@
-model.
+model\Board.py
+model\Game.py
+model\Player.py
+model\PlayerAgentAI.py
