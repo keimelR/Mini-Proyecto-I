@@ -1,3 +1,4 @@
+__pycache__/
 model\Board.py
 model\Game.py
 model\Player.py
