@@ -1,5 +1,12 @@
 class Colors:
+    """
+    Clase que define la paleta de colores utilizada en la interfaz gráfica del juego.
+    Cada atributo representa un color en formato RGB para diferentes elementos visuales.
+    """
     def __init__(self):
+        """
+        Inicializa los colores principales usados en la interfaz del juego.
+        """
         self.background = (242, 233, 216)
         self.backgroundHeaderCard = (216, 227, 242)
         self.backgroundCard = (234, 225, 208)

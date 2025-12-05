@@ -4,6 +4,7 @@ import pygame.math
 
 from typing import Tuple
 
+from model.BoardFront import BoardFront
 from model.Text import Text, TypeFont
 from model.Images import Images
 from model.Colors import Colors
@@ -17,7 +18,11 @@ class MainScreen:
         self.text = Text()
         self.colors = Colors()
         self.images = Images()
+        self.boardFront = BoardFront(self.colors.neutral, self.colors.secondary, self.colors.terciary, self.display)
         self.usedHeight = 0
+        
+        self.leftBoard = 40 + self.widht // 4
+        self.topBoard = self.height // 3
         
         self.existWinner = 0
         self.turn = -1
@@ -59,7 +64,8 @@ class MainScreen:
         self.drawCard()
         
         # Dibujamos el Tablero
-        self.printBoard()
+        self.boardFront.setScreen(self.display)
+        self.boardFront.draw(self.leftBoard, self.topBoard, 60, 10)
     
         # Dibujamos el CardIcon del Usuario
         self.drawCardIcon(
@@ -158,9 +164,9 @@ class MainScreen:
             if event.button == 1:
                 mouse_x, mouse_y = event.pos
                 print(f"X = {mouse_x} - Y = {mouse_y}")                    
-
+                
                 # Tablero
-                if((mouse_x > 315 and mouse_x < 495) and (mouse_y > 190 and mouse_y < 370)):
+                if((mouse_x > 315 and mouse_x < 495) and (mouse_y > 190 and mouse_y < 370)):        
                     # Obtenemos la cuadricula del tablero que fue marcada
                     grid = self.markGrid(areaX=mouse_x, areaY=mouse_y) - 1
                     
@@ -174,17 +180,29 @@ class MainScreen:
                         
                         # Dibuja en pantalla un 'O' cuando sea turno del Usuario
                         if self.turn == 1:
-                            self.printSymbolO(
+                            self.boardFront.agentO.drawSymbolO(
                                 areaX=mouse_x,
-                                areaY=mouse_y
+                                areaY=mouse_y,
+                                left=self.leftBoard,
+                                top=self.topBoard,
+                                sizeGrid=60,
+                                widhtLineBoard=10,
+                                radius=20,
+                                width=7
                             )
                         
                         # Dibuja en pantalla una 'X' cuando sea turno del Agente AI
                         if self.turn == -1:
-                            self.printSymbolX(
+                            self.boardFront.agentX.drawSymbolX(
                                 areaX=mouse_x,
-                                areaY=mouse_y
+                                areaY=mouse_y,
+                                left=self.leftBoard,
+                                top=self.topBoard,
+                                sizeGrid=60,
+                                widhtLineBoard=10,
+                                widthLineSymbol=7
                             )
+                        #    self.printSymbolX(areaX=mouse_x, areaY=mouse_y)
 
                         # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
                         self.boardState[grid] = self.turn
@@ -219,7 +237,7 @@ class MainScreen:
         self.turn = -1
         self.boardState = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
         
-        self.printBoard()
+        self.boardFront.draw(self.leftBoard, self.topBoard, 60, 10)
      
     def print(
         self,
@@ -246,103 +264,6 @@ class MainScreen:
         transparencyImage = loadImage.convert_alpha()        
         self.display.blit(transparencyImage, (areaX , areaY))
         
-    def printBoard(self):
-        for column in range(2):
-            columnLine = pygame.Rect((
-                45 + (self.widht // 4),
-                self.height // 3 + (60 * column),
-                180,
-                10
-            ))
-            
-            pygame.draw.rect(
-                self.display, 
-                self.colors.neutral, 
-                columnLine, 
-                border_top_left_radius=10, 
-                border_bottom_right_radius=10
-            )
-            
-        for row in range(2):
-            rowLine = pygame.Rect((
-                self.widht // 2 - 170 + (row * 60),
-                190,
-                10,
-                180
-            ))
-            
-            pygame.draw.rect(
-                self.display, 
-                self.colors.neutral, 
-                rowLine, 
-                border_top_left_radius=10, 
-                border_bottom_right_radius=10
-            )
-            
-    def printSymbolX(
-        self,
-        areaX: int,
-        areaY: int
-    ):
-        areaXStart = self.getGridStartPosX(areaX=areaX)
-        areaYStart = self.getGridStartPosY(areaY=areaY)
-            
-        areaXEnd = areaXStart + 60 - 30
-        areaYEnd = areaYStart + 60 - 30
-            
-        pygame.draw.line(
-            self.display,
-            self.colors.secondary,
-            (areaXStart, areaYStart),
-            (areaXEnd, areaYEnd - 10),
-            7
-        )
-            
-        pygame.draw.line(
-            self.display,
-            self.colors.secondary,
-            (areaXEnd, areaYStart),
-            (areaXStart, areaYEnd - 10),
-            7
-        )  
-        
-    def printSymbolO(
-        self,
-        areaX: int,
-        areaY: int
-    ):
-        areaXStart = self.getGridStartPosX(areaX=areaX)
-        areaYStart = self.getGridStartPosY(areaY=areaY)
-            
-        areaXEnd = areaXStart + 60 - 30
-        areaYEnd = areaYStart + 60 - 30
-        
-        pygame.draw.circle(
-            self.display,
-            self.colors.terciary,
-            ((areaXStart + areaXEnd) // 2, (areaYStart + areaYEnd - 10) // 2),
-            20,
-            5
-        )
-        
-        
-    def getGridStartPosX(self, areaX: int) -> int:
-        areaXPos = (areaX - 315) // 60
-        areaXStart = 315 + (areaXPos * 60) + 15
-
-        if(areaXPos > 1):
-            areaXStart += 5
-            
-        return areaXStart
-            
-    def getGridStartPosY(self, areaY: int) -> int:
-        areaYPos = (areaY - 190) // 60
-        areaYStart = 190 + (areaYPos * 60) + 15
-        
-        if(areaYPos > 1):
-            areaYStart += 5
-            
-        return areaYStart
     
     def markGrid(
         self,
