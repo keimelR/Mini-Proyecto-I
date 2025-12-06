@@ -1,0 +1,3 @@
+PLAYER = -1
+IA = 1
+VACIO = 0
