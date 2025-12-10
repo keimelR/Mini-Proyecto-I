@@ -29,7 +29,7 @@ class MainScreen:
         self.boardFront = BoardFront(self.colors.neutral, self.colors.secondary, self.colors.terciary, self.display)
         self.usedHeight = 0
         
-        self.leftBoard = 40 + self.widht // 4
+        self.leftBoard = self.widht // 2 - ((WIDTH_LINE_CASILLA * 3) // 2) - (SIZE_GRID * 3 // 2)
         self.topBoard = self.height // 3 - 50
         
         self.existWinner = 0
@@ -356,8 +356,7 @@ class MainScreen:
                 )
                 pygame.display.flip()
                 pygame.time.delay(5)
-                
-                
+                   
     def winVertical(self) -> bool:
         return (self.boardState[0] == self.turn and self.boardState[3] == self.turn and self.boardState[6] == self.turn) or (self.boardState[1] == self.turn and self.boardState[4] == self.turn and self.boardState[7] == self.turn) or (self.boardState[2] == self.turn and self.boardState[5] == self.turn and self.boardState[8] == self.turn)
     
