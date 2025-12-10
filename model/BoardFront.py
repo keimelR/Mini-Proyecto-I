@@ -22,7 +22,13 @@ class BoardFront:
         self.screen = screen
         self.agentX = Mark(colorSymbolX, self.screen)
         self.agentO = Mark(colorSymbolO, self.screen)
+        self.width = 0
+        self.height = 0
+        self.left = 0
+        self.top = 0
         
+        self.grid_map = {}
+
     def draw(
         self,
         left: int,
@@ -39,32 +45,58 @@ class BoardFront:
             sizeGrid (int): Tamaño de cada celda del tablero.
             widhtLine (int): Grosor de las líneas del tablero.
         """
-        width = sizeGrid * 3
-        for column in range(2):
-            columnLine = pygame.Rect((
-                left + widhtLine,
-                top + (sizeGrid * column),
-                width,
+        self.width = sizeGrid * 3 + (widhtLine * 2)
+        self.height = self.width
+        self.left = left
+        self.top = top
+        
+        self.grid_map = {
+            0: (left, top, left + sizeGrid, top + sizeGrid),
+            1: (left + sizeGrid + widhtLine, top, left + sizeGrid * 2 + widhtLine, top + sizeGrid),
+            2: (left + sizeGrid * 2 + widhtLine * 2, top, left + sizeGrid * 3 + widhtLine * 2, top + sizeGrid),
+            
+            3: (left, top + sizeGrid + widhtLine, left + sizeGrid, top + sizeGrid * 2 + widhtLine),
+            4: (left + sizeGrid + widhtLine, top + sizeGrid + widhtLine, left + sizeGrid * 2 + widhtLine, top + sizeGrid * 2 + widhtLine),
+            5: (left + sizeGrid * 2 + widhtLine * 2, top + sizeGrid + widhtLine, left + sizeGrid * 3 + widhtLine * 2, top + sizeGrid * 2 + widhtLine),
+            
+            6: (left, top + sizeGrid * 2 + widhtLine * 2, left + sizeGrid, top + sizeGrid * 3 + widhtLine * 2),
+            7: (left + sizeGrid + widhtLine, top + sizeGrid * 2 + widhtLine * 2, left + sizeGrid * 2 + widhtLine, top + sizeGrid * 3 + widhtLine * 2),
+            8: (left + sizeGrid * 2 + widhtLine * 2, top + sizeGrid * 2 + widhtLine * 2, left + sizeGrid * 3 + widhtLine * 2, top + sizeGrid * 3 + widhtLine * 2),
+        }
+        
+        # print(self.grid_map)
+        # for num_casilla in self.grid_map:
+        #     casilla = self.grid_map[num_casilla]
+        #     casillaRect = pygame.Rect((casilla[0], casilla[1], sizeGrid, sizeGrid))
+        #     pygame.draw.rect(self.screen, (255,255,255), casillaRect, border_top_left_radius=3, border_bottom_right_radius=3)
+        
+        for row in range(2):
+            
+            rowLine = pygame.Rect((
+                left,
+                top + (sizeGrid * (row + 1)) + (widhtLine * (row)),
+                self.width,
                 widhtLine
             ))
             pygame.draw.rect(
                 self.screen, 
                 self.colorBoard, 
-                columnLine, 
-                border_top_left_radius=10, 
-                border_bottom_right_radius=10
+                rowLine, 
+                border_top_left_radius=3,
+                border_bottom_right_radius=3
             )
-        for row in range(2):
-            rowLine = pygame.Rect((
-                left + (width // 3) + (row * sizeGrid),
-                top - sizeGrid + widhtLine,
+            
+        for column in range(2):
+            columnLine = pygame.Rect((
+                left + (sizeGrid * (column + 1)) + (widhtLine * (column)),
+                top ,
                 widhtLine,
-                width
+                self.width
             ))
             pygame.draw.rect(
                 self.screen, 
                 self.colorBoard, 
-                rowLine, 
+                columnLine, 
                 border_top_left_radius=10, 
                 border_bottom_right_radius=10
             )

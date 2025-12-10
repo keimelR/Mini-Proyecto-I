@@ -11,15 +11,12 @@ class Mark:
         """
         self.color = color
         self.screen = screen
-        
+    
     def drawSymbolO(
         self,
-        areaX: int,
-        areaY: int,
-        left: int,
-        top: int,
+        startX: int,
+        startY: int,
         sizeGrid: int,
-        widhtLineBoard: int,
         radius: int,
         width: int
     ):
@@ -27,8 +24,8 @@ class Mark:
         Dibuja el símbolo O en la celda correspondiente del tablero.
         
         Args:
-            areaX (int): Posición X del clic o referencia.
-            areaY (int): Posición Y del clic o referencia.
+            startX (int): offset X de la casilla
+            startY (int): offset Y de la casilla
             left (int): Posición X inicial del tablero.
             top (int): Posición Y inicial del tablero.
             sizeGrid (int): Tamaño de cada celda.
@@ -36,25 +33,11 @@ class Mark:
             radius (int): Radio del círculo O.
             width (int): Grosor de la línea del círculo.
         """
-        areaXStart = self.getGridStartPosX(
-            areaX=areaX,
-            left=left,
-            sizeGrid=sizeGrid,
-            widhtLine=widhtLineBoard
-        )
-        areaYStart = self.getGridStartPosY(
-            areaY=areaY,
-            top=top,
-            sizeGrid=sizeGrid,
-            widhtLine=widhtLineBoard
-        )
-            
-        areaXEnd = areaXStart + sizeGrid - (sizeGrid // 2)
-        areaYEnd = areaYStart + sizeGrid - (sizeGrid // 2)
+        
         pygame.draw.circle(
             self.screen,
             self.color,
-            ((areaXStart + areaXEnd) // 2, (areaYStart + areaYEnd - 10) // 2),
+            (startX + sizeGrid // 2, startY + sizeGrid // 2),
             radius,
             width
         )
@@ -62,56 +45,37 @@ class Mark:
         
     def drawSymbolX(
         self,
-        areaX: int,
-        areaY: int,
-        left: int,
-        top: int,
+        startX: int,
+        startY: int,
         sizeGrid: int,
-        widhtLineBoard: int,
         widthLineSymbol: int
     ):
         """
         Dibuja el símbolo X en la celda correspondiente del tablero.
         
         Args:
-            areaX (int): Posición X del clic o referencia.
-            areaY (int): Posición Y del clic o referencia.
+            startX (int): offset X de la casilla
+            startY (int): offset Y de la casilla
             left (int): Posición X inicial del tablero.
             top (int): Posición Y inicial del tablero.
             sizeGrid (int): Tamaño de cada celda.
             widhtLineBoard (int): Grosor de las líneas del tablero.
             widthLineSymbol (int): Grosor de la línea del símbolo X.
         """
-        areaXStart = self.getGridStartPosX(
-            areaX=areaX,
-            left=left,
-            sizeGrid=sizeGrid,
-            widhtLine=widhtLineBoard
-        )
         
-        areaYStart = self.getGridStartPosY(
-            areaY=areaY,
-            top=top,
-            sizeGrid=sizeGrid,
-            widhtLine=widhtLineBoard
-        )
-            
-        areaXEnd = areaXStart + sizeGrid - (sizeGrid // 2)
-        areaYEnd = areaYStart + sizeGrid - (sizeGrid // 2)
-            
         pygame.draw.line(
             self.screen,
             self.color,
-            (areaXStart, areaYStart),
-            (areaXEnd, areaYEnd - 10),
+            (startX + 10, startY + 10),
+            (startX + sizeGrid - 10, startY + sizeGrid - 10),
             widthLineSymbol
         )
             
         pygame.draw.line(
             self.screen,
             self.color,
-            (areaXEnd, areaYStart),
-            (areaXStart, areaYEnd - 10),
+            (startX + sizeGrid - 10, startY + 10),
+            (startX + 10, startY + sizeGrid - 10),
             widthLineSymbol
         )  
     

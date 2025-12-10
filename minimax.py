@@ -1,10 +1,6 @@
 from bigtree import Node
-
+from constantes import *
 # Los players son PLAYER y la IA es 1
-
-PLAYER = -1
-IA = 1
-VACIO = 0
 
 #  -----------
 # | 0 | 1 | 2 |
@@ -26,7 +22,7 @@ def minimax(tablero: list[int], nodo_padre: Node, turno: int, profundidad: int):
         for i in range(9):
             if tablero[i] == VACIO:
                 tablero[i] = PLAYER
-                nodo_actual = Node(i, tablero=tablero.copy(), profundidad=profundidad, parent=nodo_padre)
+                nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(), profundidad=profundidad, parent=nodo_padre)
                 
                 resultado = minimax(tablero, nodo_actual, IA, profundidad=profundidad + 1)
                 
@@ -40,7 +36,7 @@ def minimax(tablero: list[int], nodo_padre: Node, turno: int, profundidad: int):
             if tablero[i] == VACIO:
                 tablero[i] = IA
                 
-                nodo_actual = Node(i, tablero=tablero.copy(),profundidad=profundidad, parent=nodo_padre)
+                nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(),profundidad=profundidad, parent=nodo_padre)
                 resultado = minimax(tablero, nodo_actual, PLAYER, profundidad + 1)
                 
                 tablero[i] = VACIO
@@ -51,16 +47,16 @@ def minimax(tablero: list[int], nodo_padre: Node, turno: int, profundidad: int):
         exit()
 
 # Funcion recursiva, debe de devolver la mejor jugada que puede realizar la IA, el valor a devolver es un int
-def mejor_movimiento_IA(tablero: list[int]):
+def mejor_movimiento_IA(tablero: list[int], profundidad: int):
     mejor_puntaje = -float('inf')
     mejor_movimiento = -1
     for i in range(9):
         if tablero[i] == VACIO:
             tablero[i] = IA
             
-            nodo_actual = Node(i, tablero=tablero.copy(), profundidad=0, parent=nodo_raiz)
+            nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(), profundidad=0, parent=nodo_raiz)
             
-            resultado = minimax(tablero, nodo_actual, PLAYER, n_turno)
+            resultado = minimax(tablero, nodo_actual, PLAYER, profundidad)
                 
             tablero[i] = VACIO
             

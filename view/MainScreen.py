@@ -1,6 +1,8 @@
 import pygame
 import time
 import pygame.math
+from constantes import *
+from tkinter import messagebox
 
 from typing import Tuple
 
@@ -8,6 +10,12 @@ from model.BoardFront import BoardFront
 from model.Text import Text, TypeFont
 from model.Images import Images
 from model.Colors import Colors
+from minimax import mejor_movimiento_IA
+
+
+SIZE_GRID = 60
+WIDTH_LINE_CASILLA = 10
+
 
 class MainScreen:
     def __init__(self):
@@ -22,14 +30,32 @@ class MainScreen:
         self.usedHeight = 0
         
         self.leftBoard = 40 + self.widht // 4
-        self.topBoard = self.height // 3
+        self.topBoard = self.height // 3 - 50
         
         self.existWinner = 0
         self.turn = -1
-        self.boardState = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+        self.turno_n = 0
+        self.boardState = [0, 0, 0, 0, 0, 0, 0, 0, 0]
         
         self.numberWinUser = 0
         self.numberWinAgentAi = 0
+        
+        self.grid_map = {
+        # Fila 1 (Y: 190 - 250)
+        0: (self.leftBoard, self.topBoard, self.widht // 3, self.height // 1.5),
+        1: (375, 190, 435, 250),
+        2: (435, 190, 495, 250),
+            
+        # Fila 2 (Y: 250 - 310)
+        3: (315, 250, 375, 310), 
+        4: (375, 250, 435, 310),
+        5: (435, 250, 495, 310),
+            
+        # Fila 3 (Y: 310 - 370)
+        6: (315, 310, 375, 370), 
+        7: (375, 310, 435, 370),
+        8: (435, 310, 495, 370),
+        }
         
                 
     def on_init(self):
@@ -60,7 +86,6 @@ class MainScreen:
             align="center"
         )
         
-        # Dibujamos el "Card" del juego
         self.drawCard()
         
         # Dibujamos el Tablero
@@ -151,7 +176,7 @@ class MainScreen:
             
             self.drawTitleCard(
                 typeFont=TypeFont.HEADLINE,
-                text="Turno: Usuario" if self.turn == 1 else "Turno: Agente AI",
+                text="Turno: Usuario" if self.turn == PLAYER else "Turno: Agente AI",
                 coordinates=(self.widht // 2, 83 + 20),
                 align="center"
             )
@@ -165,83 +190,112 @@ class MainScreen:
                 mouse_x, mouse_y = event.pos
                 print(f"X = {mouse_x} - Y = {mouse_y}")                    
                 
-                # Tablero
-                if((mouse_x > 315 and mouse_x < 495) and (mouse_y > 190 and mouse_y < 370)):        
-                    # Obtenemos la cuadricula del tablero que fue marcada
-                    grid = self.markGrid(areaX=mouse_x, areaY=mouse_y) - 1
-                    
-                    if self.boardState[grid] == 1 or self.boardState[grid] == -1:
-                        # TODO. Pop-Up Anunciando que cuadricula ocupada
-                        print("Cuadricula Ocupada")
-                        return
-                    
-                    # Mientras no exista un ganador se puede jugar
-                    if self.existWinner == 0:
+                if self.turn == PLAYER:
+                    # Tablero
+                    if((mouse_x > self.boardFront.left and mouse_x < self.boardFront.left + self.boardFront.width) and (mouse_y > self.boardFront.top and mouse_y < self.boardFront.top + self.boardFront.height)):        
+                        # Obtenemos la cuadricula del tablero que fue marcada
+                        grid = self.markGrid(areaX=mouse_x, areaY=mouse_y)
                         
-                        # Dibuja en pantalla un 'O' cuando sea turno del Usuario
-                        if self.turn == 1:
-                            self.boardFront.agentO.drawSymbolO(
-                                areaX=mouse_x,
-                                areaY=mouse_y,
-                                left=self.leftBoard,
-                                top=self.topBoard,
-                                sizeGrid=60,
-                                widhtLineBoard=10,
-                                radius=20,
-                                width=7
-                            )
+                        print(self.boardFront.grid_map)
+                        print("Casilla: ", grid)
+                        print("Contenido Casilla: ", self.boardState[grid])
+                        print("Coordenadas: ", self.boardFront.grid_map[grid])
                         
-                        # Dibuja en pantalla una 'X' cuando sea turno del Agente AI
-                        if self.turn == -1:
-                            self.boardFront.agentX.drawSymbolX(
-                                areaX=mouse_x,
-                                areaY=mouse_y,
-                                left=self.leftBoard,
-                                top=self.topBoard,
-                                sizeGrid=60,
-                                widhtLineBoard=10,
-                                widthLineSymbol=7
-                            )
-                        #    self.printSymbolX(areaX=mouse_x, areaY=mouse_y)
-
-                        # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
-                        self.boardState[grid] = self.turn
-                                                
-                        if(self.winVertical() or self.winHorizontal() or self.winDiagonalLeft() or self.winDiagonalRight()):
-                            # Realizamos un efecto de desplazamiento por medio de una linea en la jugada ganadora
-                            self.effectWin(areaX=mouse_x, areaY=mouse_y)
-                            # Almacenamos el ganador
-                            self.existWinner = self.turn
-                            
-                            if self.existWinner == 1:
+                        if self.boardState[grid] == IA or self.boardState[grid] == PLAYER:
+                            # TODO. Pop-Up Anunciando que cuadricula ocupada
+                            messagebox.showwarning("Cuadricula Ocupada", "La cuadricula seleccionada ya esta ocupada")
+                            return
+                        
+                        # Mientras no exista un ganador se puede jugar
+                        if self.existWinner == 0:
+                            self.turnoPlayer(grid=grid)
+                                 
+                            self.turno_n += 1
+                                   
+                            if(self.winVertical() or self.winHorizontal() or self.winDiagonalLeft() or self.winDiagonalRight()):
+                                # Realizamos un efecto de desplazamiento por medio de una linea en la jugada ganadora
+                                self.effectWin(grid)
+                                # Almacenamos el ganador
+                                self.existWinner = PLAYER
+                                
                                 self.numberWinUser += 1
                             else:
-                                self.numberWinAgentAi += 1
-                        
-                        if self.existWinner == 0:
-                            self.turn *= -1
-      
-                # Boton de Reiniciar Juego
-                if((mouse_x > 432 and mouse_x < 648) and (mouse_y > 605 and mouse_y < 645)):
-                    cleanBoard = pygame.Rect(
-                        315,
-                        190,
-                        180,
-                        180
-                    )      
-                    pygame.draw.rect(self.display, self.colors.backgroundCard, cleanBoard)
-                    self.resetGame()
+                                self.turn = IA
+                                
+                                # Aqui se debe de colocar una pantalla de carga hasta que se acabe el tiempo
+                                # time.sleep(5)
+                                
+                                mejor_movimiento = self.turnoIA()
+                                
+                                self.turno_n += 1
+                                
+                                if(self.winVertical() or self.winHorizontal() or self.winDiagonalLeft() or self.winDiagonalRight()):
+                                    # Realizamos un efecto de desplazamiento por medio de una linea en la jugada ganadora
+                                    self.effectWin(n_casilla=mejor_movimiento)
+                                    # Almacenamos el ganador
+                                    self.existWinner = IA
+                                    
+                                    self.numberWinAgentAi += 1
+                                                            
+                            if self.existWinner == 0:
+                                self.turn *= -1
+        
+                    # Boton de Reiniciar Juego
+                    if((mouse_x > 432 and mouse_x < 648) and (mouse_y > 605 and mouse_y < 645)):
+                        cleanBoard = pygame.Rect(
+                            315,
+                            190,
+                            180,
+                            180
+                        )      
+                        pygame.draw.rect(self.display, self.colors.backgroundCard, cleanBoard)
+                        self.resetGame()
                     
+    def turnoPlayer(self, grid: int):
+        self.boardState[grid] = PLAYER
+        casilla = self.boardFront.grid_map[grid]
+        
+        self.boardFront.agentO.drawSymbolO(
+            startX= casilla[0],
+            startY=casilla[1],
+            sizeGrid=60,
+            radius=20,
+            width=7
+        )
+        
+        # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
+                    
+    def turnoIA(self):
+        mejor_movimiento = mejor_movimiento_IA(self.boardState.copy(), self.turno_n)
+                        
+        self.boardState[mejor_movimiento] = IA
+        casilla = self.boardFront.grid_map[mejor_movimiento]       
+        
+        
+        # Dibuja en pantalla una 'X' cuando sea turno del Agente AI
+        self.boardFront.agentX.drawSymbolX(
+            startX=casilla[0],
+            startY=casilla[1],
+            sizeGrid=60,
+            widthLineSymbol=7
+        )
+        
+        return mejor_movimiento
+        #    self.printSymbolX(areaX=mouse_x, areaY=mouse_y)
+
+        # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
+      
     def resetGame(self):
         self.existWinner = 0
-        self.turn = -1
-        self.boardState = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+        self.turn = PLAYER
+        self.boardState = [0, 0, 0, 0, 0, 0, 0, 0, 0]
         
         self.boardFront.draw(self.leftBoard, self.topBoard, 60, 10)
      
     def print(
         self,
-        typeFont: TypeFont,
+        typeFont: 
+        TypeFont,
         text: str,
         areaX: float,
         areaY: float,
@@ -263,43 +317,41 @@ class MainScreen:
         loadImage = pygame.image.load(image)
         transparencyImage = loadImage.convert_alpha()        
         self.display.blit(transparencyImage, (areaX , areaY))
-        
-    
+         
     def markGrid(
         self,
         areaX: int,
         areaY: int
     ) -> int:
-        grid = (round(areaX - 315) // 60) + (round(areaY - 190) // 60) + 1
-        if(areaY >= 250 and areaY < 310):
-            grid += 2
-        elif(areaY >= 310 and areaY < 370):
-            grid += 4
+        grid = -1
+        for n_casilla in self.boardFront.grid_map:
+            casilla = self.boardFront.grid_map[n_casilla]
+            if(areaX >= casilla[0] and areaX <= casilla[2] and areaY >= casilla[1] and areaY <= casilla[3]):
+                grid = n_casilla
+                break
         return grid
     
-    def effectWin(self, areaX: int, areaY: int):
-        row = (areaX - 315) // 60
-        column = (areaY - 190) // 60
+    def effectWin(self, n_casilla: int):
+        row = 0 if n_casilla >= 0 and n_casilla <= 2 else 1 if n_casilla >= 3 and n_casilla <= 5 else 2
+        column = n_casilla % 3
         
-        self.effectWinHorizontal(column)
-        self.effectWinVertical(row)
+        self.effectWinHorizontal(row)
+        self.effectWinVertical(column)
         self.effectWinDiagonalLeft()
         self.effectWinDiagonalRight()
                 
     def winHorizontal(self) -> bool:            
-        return ((self.boardState[0] == self.boardState[1] and self.boardState[0] == self.boardState[2]) or
-            (self.boardState[3] == self.boardState[4] and self.boardState[3] == self.boardState[5]) or
-            (self.boardState[6] == self.boardState[7] and self.boardState[6] == self.boardState[8])
-        )
+        return (self.boardState[0] == self.turn and self.boardState[1] == self.turn and self.boardState[2] == self.turn) or (self.boardState[3] == self.turn and self.boardState[4] == self.turn and self.boardState[5] == self.turn) or (self.boardState[6] == self.turn and self.boardState[7] == self.turn and self.boardState[8] == self.turn)
     
-    def effectWinHorizontal(self, column: int):
+    def effectWinHorizontal(self, row: int):
         if self.winHorizontal():
-            for row in range(180):
+            cantidad_de_pasos = 180
+            for pasos in range(cantidad_de_pasos, 0, -1):
                 pygame.draw.line(
                     self.display,
-                    self.colors.terciary if self.turn == 1 else self.colors.secondary,
-                    (315, 215 + (column * 60)),
-                    (315 + row, 215 + (column * 60)),
+                    (255,0,0),
+                    (self.boardFront.left, self.boardFront.top + (row * (SIZE_GRID + WIDTH_LINE_CASILLA)) + SIZE_GRID // 2),
+                    (self.boardFront.left + (self.boardFront.width //  pasos), self.boardFront.top + (row * (SIZE_GRID + WIDTH_LINE_CASILLA)) + SIZE_GRID // 2),
                     5
                 )
                 pygame.display.flip()
@@ -307,26 +359,25 @@ class MainScreen:
                 
                 
     def winVertical(self) -> bool:
-        return ((self.boardState[0] == self.boardState[3] and self.boardState[0] == self.boardState[6]) or
-            (self.boardState[1] == self.boardState[4] and self.boardState[1] == self.boardState[7]) or
-            (self.boardState[2] == self.boardState[5] and self.boardState[2] == self.boardState[8])
-        )
+        return (self.boardState[0] == self.turn and self.boardState[3] == self.turn and self.boardState[6] == self.turn) or (self.boardState[1] == self.turn and self.boardState[4] == self.turn and self.boardState[7] == self.turn) or (self.boardState[2] == self.turn and self.boardState[5] == self.turn and self.boardState[8] == self.turn)
     
-    def effectWinVertical(self, row: int):
+    def effectWinVertical(self, column: int):
+        print(column)
         if (self.winVertical()):
-            for column in range(180):
+            cantidad_de_pasos = 180
+            for pasos in range(cantidad_de_pasos, 0, -1):
                 pygame.draw.line(
                     self.display,
-                    self.colors.terciary if self.turn == 1 else self.colors.secondary,
-                    (315 + 30 + (row * 60), 190),
-                    (315 + 30 + (row * 60), 190 + column),
+                    (255,0,0),
+                    (self.boardFront.left + (column * (SIZE_GRID + WIDTH_LINE_CASILLA)) + SIZE_GRID // 2, self.boardFront.top),
+                    (self.boardFront.left + (column * (SIZE_GRID + WIDTH_LINE_CASILLA)) + SIZE_GRID // 2, self.boardFront.top + (self.boardFront.height //  pasos)),
                     5
                 )
                 pygame.display.flip()
                 pygame.time.delay(5)
     
     def winDiagonalLeft(self) -> bool:
-        return self.boardState[0] == self.boardState[4] and self.boardState[0] == self.boardState[8]
+        return (self.boardState[0] == self.turn and self.boardState[4] == self.turn and self.boardState[8] == self.turn)
     
     def effectWinDiagonalLeft(self):
         if (self.winDiagonalLeft()):
@@ -342,7 +393,7 @@ class MainScreen:
                 pygame.time.delay(5)
                 
     def winDiagonalRight(self) -> bool:
-        return (self.boardState[2] == self.boardState[4] and self.boardState[2] == self.boardState[6])
+        return (self.boardState[2] == self.turn and self.boardState[4] == self.turn and self.boardState[6] == self.turn)
                 
     def effectWinDiagonalRight(self):
         if (self.winDiagonalRight()):
