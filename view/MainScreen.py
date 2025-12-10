@@ -438,6 +438,7 @@ class MainScreen:
                 messagebox.showwarning("Error", "No se puede acceder al nodo padre")
         
         def accion_boton_ver_estado_actual():
+            return
         
         self.cargar_tableros_arbol_de_desiciones()
         width_boton_ver_nodo_padre = 200
