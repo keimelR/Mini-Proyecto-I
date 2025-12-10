@@ -2,15 +2,6 @@ from bigtree import Node
 from constantes import *
 # Los players son PLAYER y la IA es 1
 
-#  -----------
-# | 0 | 1 | 2 |
-# | 3 | 4 | 5 |
-# | 6 | 7 | 8 |
-#  -----------
-tablero_actual: list[int] = [0,0,0,0,0,0,0,0,0] # Del index 0 al 2 es la fila 1, del index 3 al 5 la fila 2 y del index 6 al 8 la 3
-
-nodo_raiz = Node("a", tablero=tablero_actual.copy())
-
 def minimax(tablero: list[int], nodo_padre: Node, turno: int, profundidad: int):
     analisis_victoria = detectar_victoria(tablero)
     if analisis_victoria != 0 or not any(x == VACIO for x in tablero):
@@ -22,7 +13,7 @@ def minimax(tablero: list[int], nodo_padre: Node, turno: int, profundidad: int):
         for i in range(9):
             if tablero[i] == VACIO:
                 tablero[i] = PLAYER
-                nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(), profundidad=profundidad, parent=nodo_padre)
+                nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(), profundidad=profundidad, parent=nodo_padre, jugador=PLAYER)
                 
                 resultado = minimax(tablero, nodo_actual, IA, profundidad=profundidad + 1)
                 
@@ -36,7 +27,7 @@ def minimax(tablero: list[int], nodo_padre: Node, turno: int, profundidad: int):
             if tablero[i] == VACIO:
                 tablero[i] = IA
                 
-                nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(),profundidad=profundidad, parent=nodo_padre)
+                nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(),profundidad=profundidad, parent=nodo_padre, jugador=IA)
                 resultado = minimax(tablero, nodo_actual, PLAYER, profundidad + 1)
                 
                 tablero[i] = VACIO
@@ -47,14 +38,17 @@ def minimax(tablero: list[int], nodo_padre: Node, turno: int, profundidad: int):
         exit()
 
 # Funcion recursiva, debe de devolver la mejor jugada que puede realizar la IA, el valor a devolver es un int
-def mejor_movimiento_IA(tablero: list[int], profundidad: int):
+def mejor_movimiento_IA(profundidad: int, nodo_raiz: Node):
     mejor_puntaje = -float('inf')
     mejor_movimiento = -1
+    
+    tablero = nodo_raiz.get_attr("tablero")
+    
     for i in range(9):
         if tablero[i] == VACIO:
             tablero[i] = IA
             
-            nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(), profundidad=0, parent=nodo_raiz)
+            nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(), profundidad=profundidad, parent=nodo_raiz, jugador=IA)
             
             resultado = minimax(tablero, nodo_actual, PLAYER, profundidad)
                 
@@ -105,80 +99,3 @@ def detectar_lineas_diagonales(tablero: list[int]):
         return IA
     
     return VACIO
-
-def imprimir_tablero(tablero: list[int]):
-    for i in range(9):
-        casilla = i + 1 if tablero[i] == VACIO else tablero[i]
-        
-        if i % 3 == 0:
-            print("\n-------------")
-            print(f"| ", end="")
-        
-        
-        if i == 8:
-            print(casilla, end=" |\n")
-        else:
-            print(casilla, end=" | ")
-            
-    print("-------------")
-
-def main():
-    
-    global turno_actual
-    turno_actual = PLAYER
-    global n_turno
-    n_turno = 0
-    
-    while True:
-        victoria = detectar_victoria(tablero_actual)
-        
-        if not any(x == VACIO for x in tablero_actual):
-            print("La partida ha terminado, no hay ganador")
-            imprimir_tablero(tablero_actual)
-            return
-        
-        if victoria != VACIO:
-            imprimir_tablero(tablero_actual)
-        
-        if victoria == PLAYER:
-            print(f"*******************************\nEl jugador ha ganado en {n_turno} turnos\n********************************")
-            return
-        if victoria == IA:
-            print(f"*******************************\nEl ordenador ha ganado en {n_turno} turnos\n********************************")
-            return
-        n_turno += 1
-        
-        
-        print(f"Turno actual: {"PLAYER" if turno_actual == PLAYER else "IA"}")
-        print(f"Número de turnos: {n_turno}")
-        
-        if turno_actual == PLAYER:
-            print("Turno del jugador")
-            
-            imprimir_tablero(tablero_actual)
-            
-            casilla = -1
-            while True:
-                casilla = int(input("Escriba donde quiere introducir su movimiento: "))
-                
-                if casilla < 1 or casilla > 9 or tablero_actual[casilla - 1] != VACIO:
-                    print("El valor introducido no es válido, la casilla ya esta ocupada o no existe")
-                    continue
-                else:
-                    break
-            
-            tablero_actual[casilla - 1] = PLAYER
-            
-        if turno_actual == IA:
-            print("Turno de la IA")
-            
-            casilla = mejor_movimiento_IA(tablero_actual)
-            nodo_raiz.show(attr_list=["tablero", "profundidad", "victoria"])
-            input("")
-            imprimir_tablero(tablero_actual)
-            tablero_actual[casilla] = IA
-        
-        turno_actual = IA if turno_actual == PLAYER else PLAYER
-
-if __name__ == "__main__":
-    main()

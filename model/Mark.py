@@ -48,7 +48,8 @@ class Mark:
         startX: int,
         startY: int,
         sizeGrid: int,
-        widthLineSymbol: int
+        widthLineSymbol: int,
+        margin = 10
     ):
         """
         Dibuja el símbolo X en la celda correspondiente del tablero.
@@ -66,16 +67,16 @@ class Mark:
         pygame.draw.line(
             self.screen,
             self.color,
-            (startX + 10, startY + 10),
-            (startX + sizeGrid - 10, startY + sizeGrid - 10),
+            (startX + margin, startY + margin),
+            (startX + sizeGrid - margin, startY + sizeGrid - margin),
             widthLineSymbol
         )
             
         pygame.draw.line(
             self.screen,
             self.color,
-            (startX + sizeGrid - 10, startY + 10),
-            (startX + 10, startY + sizeGrid - 10),
+            (startX + sizeGrid - margin, startY + margin),
+            (startX + margin, startY + sizeGrid - margin),
             widthLineSymbol
         )  
     

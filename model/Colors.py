@@ -15,3 +15,8 @@ class Colors:
         self.terciary = (103, 153, 159)
         self.error = (255, 84, 73)
         self.neutral = (144, 145, 140)
+        self.morado = (255,0,255)
+        self.verde = (0,255,0)
+        self.amarillo = (255,255,0)
+        self.rojo = (255,0,0)
+        self.azul = (0,0,255)

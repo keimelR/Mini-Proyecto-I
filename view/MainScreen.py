@@ -5,6 +5,8 @@ from constantes import *
 from tkinter import messagebox
 from model.Button import Boton
 
+from bigtree import Node
+
 from typing import Tuple
 
 from model.BoardFront import BoardFront
@@ -49,6 +51,11 @@ class MainScreen:
         self.boton_partida = None
         self.boton_arbol_de_desiciones = None
         
+        self.arbol_de_desiciones = None
+        self.nodo_actual_arbol_de_desiciones = None
+        self.nodo_3_arbol_de_desiciones = None
+        
+        
         self.grid_map = {
         # Fila 1 (Y: 190 - 250)
         0: (self.leftBoard, self.topBoard, self.widht // 3, self.height // 1.5),
@@ -75,8 +82,9 @@ class MainScreen:
     def on_execute(self):
         self.on_init()
         
-        self.boton_partida = Boton(10, 10, 130, 45, "Partida", self.colors.secondary, self.colors.terciary, self.cambiarPestañaPartida)
-        self.boton_arbol_de_desiciones = Boton(self.boton_partida.right + 10, self.boton_partida.top, 230, 45, "Arbol de Desiciones", self.colors.secondary, self.colors.terciary, self.cambiarPestañaArbolDeDesiciones)        
+        self.boton_partida = Boton(10, 5, 130, 40, "Partida", self.colors.secondary, self.colors.terciary, self.cambiarPestañaPartida)
+        self.boton_arbol_de_desiciones = Boton(self.boton_partida.right + 10, self.boton_partida.top, 230, 40, "Arbol de Desiciones", self.colors.secondary, self.colors.terciary, self.cambiarPestañaArbolDeDesiciones)        
+        navBar = pygame.Rect((0, 0, self.widht, 50))
         
         while(self.running):  
             for event in pygame.event.get():
@@ -86,7 +94,12 @@ class MainScreen:
             
             if self.pestaña == PESTAÑA_PARTIDA:
                 self.cargar_pestaña_partida()
+                
+            if self.pestaña == PESTAÑA_ARBOL_DE_DESICIONES:
+                self.cargar_pestaña_arbol_de_desiciones()
             
+            
+            pygame.draw.rect(self.display, self.colors.backgroundCard, navBar, border_radius=10)
             self.boton_partida.draw(self.display)
             self.boton_arbol_de_desiciones.draw(self.display)
             
@@ -109,7 +122,7 @@ class MainScreen:
                 
                 if self.turn == PLAYER:
                     # Tablero
-                    if((mouse_x > self.boardFront.left and mouse_x < self.boardFront.left + self.boardFront.width) and (mouse_y > self.boardFront.top and mouse_y < self.boardFront.top + self.boardFront.height)):        
+                    if((mouse_x > self.boardFront.left and mouse_x < self.boardFront.left + self.boardFront.width) and (mouse_y > self.boardFront.top and mouse_y < self.boardFront.top + self.boardFront.height)) and self.pestaña == PESTAÑA_PARTIDA:        
                         # Obtenemos la cuadricula del tablero que fue marcada
                         grid = self.markGrid(areaX=mouse_x, areaY=mouse_y)
                         
@@ -171,30 +184,20 @@ class MainScreen:
         self.boardState[grid] = PLAYER
         casilla = self.boardFront.grid_map[grid]
         
-        self.boardFront.agentO.drawSymbolO(
-            startX= casilla[0],
-            startY=casilla[1],
-            sizeGrid=60,
-            radius=20,
-            width=7
-        )
+        if self.turno_n == 0:
+            self.arbol_de_desiciones = Node("a", tablero=self.boardState.copy(), jugador=PLAYER)
         
         # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
      
     def turnoIA(self):
-        mejor_movimiento = mejor_movimiento_IA(self.boardState.copy(), self.turno_n)
+        mejor_movimiento = mejor_movimiento_IA(self.turno_n, self.arbol_de_desiciones)
                         
+        if mejor_movimiento == -1:
+            print("No se puede realizar la jugada")
+            print(self.boardState)
+            return
         self.boardState[mejor_movimiento] = IA
         casilla = self.boardFront.grid_map[mejor_movimiento]       
-        
-        
-        # Dibuja en pantalla una 'X' cuando sea turno del Agente AI
-        self.boardFront.agentX.drawSymbolX(
-            startX=casilla[0],
-            startY=casilla[1],
-            sizeGrid=60,
-            widthLineSymbol=7
-        )
         
         return mejor_movimiento
         #    self.printSymbolX(areaX=mouse_x, areaY=mouse_y)
@@ -409,6 +412,135 @@ class MainScreen:
             align=align
         )
         
+    def cargar_pestaña_arbol_de_desiciones(self):
+        # if self.turno_n == 0:
+        #     self.print(
+        #         typeFont=TypeFont.HEADLINE,
+        #         text="Realiza tu jugada para cargar el arbol de desiciones",
+        #         areaX=(self.widht // 2),
+        #         areaY=120,
+        #         align="center"
+        #     )
+            
+        #     size_grid_tablero = 60
+        #     widthline_tablero = 10
+        #     width_tablero = size_grid_tablero * 3 + (widthline_tablero * 2)
+            
+        #     tablero_draw = BoardFront(self.colors.neutral, self.colors.secondary, self.colors.terciary, self.display)
+        #     tablero_draw.draw(self.widht // 2 - (width_tablero // 2), 190, sizeGrid=size_grid_tablero, widhtLine=widthline_tablero)
+        #     return
+        
+        self.cargar_tableros_arbol_de_desiciones()
+        width_boton_ver_nodo_padre = 200
+        width_boton_ver_estado_actual = 200
+        
+        boton_ver_nodo_padre = Boton(self.widht - width_boton_ver_nodo_padre - 20, 60, width_boton_ver_nodo_padre, 40, "Ver nodo padre", self.colors.secondary, self.colors.terciary, None)
+        boton_ver_estado_actual = Boton(self.widht - width_boton_ver_estado_actual - 20, boton_ver_nodo_padre.bottom + 20, width_boton_ver_estado_actual, 40, "Ver estado actual", self.colors.secondary, self.colors.terciary, None)
+        
+        
+        boton_ver_nodo_padre.draw(self.display)
+        boton_ver_estado_actual.draw(self.display)
+            
+    def cargar_tableros_arbol_de_desiciones(self):
+        size_grid_tablero_padre = 50
+        widthline_tablero_padre = 8
+        width_tablero_padre = size_grid_tablero_padre * 3 + (widthline_tablero_padre * 2)
+        
+        tablero_padre = self.arbol_de_desiciones.get_attr("tablero") 
+        tablero_padre_draw = BoardFront(self.colors.azul, self.colors.secondary, self.colors.terciary, self.display)
+        tablero_padre_draw.draw(self.widht // 2 - (width_tablero_padre // 2), 100, sizeGrid=size_grid_tablero_padre, widhtLine=widthline_tablero_padre)
+        radio_circulo_tablero_padre = 20
+        widthline_circulo_tablero_padre = 6
+        
+        for i in range(9):
+            if tablero_padre[i] == PLAYER:
+                tablero_padre_draw.agentO.drawSymbolO(
+                    startX=tablero_padre_draw.grid_map[i][0],
+                    startY=tablero_padre_draw.grid_map[i][1],
+                    sizeGrid=size_grid_tablero_padre,
+                    radius=radio_circulo_tablero_padre,
+                    width=widthline_circulo_tablero_padre
+                )
+            elif tablero_padre[i] == IA:
+                tablero_padre_draw.agentX.drawSymbolX(
+                    startX=tablero_padre_draw.grid_map[i][0],
+                    startY=tablero_padre_draw.grid_map[i][1],
+                    sizeGrid=30,
+                    widthLineSymbol=7
+                )
+                
+        lastX = 0
+        for nodo in self.arbol_de_desiciones.children:
+            tablero = nodo.get_attr("tablero")            
+
+            size_grid_tablero = 33
+            widthline_tablero = 4
+            width_tablero_hijo = size_grid_tablero * 3 + (widthline_tablero * 2)
+            
+            tablero_draw = BoardFront(self.colors.morado, self.colors.secondary, self.colors.terciary, self.display)            
+            tablero_draw.draw(lastX, 300, sizeGrid=size_grid_tablero, widhtLine=widthline_tablero)
+            
+            radio_circulo_tablero_hijo = 12
+            widthline_circulo_tablero_hijo = 4
+            
+            lastX += tablero_draw.width + 20
+            
+            for j in range(9):
+                if tablero[j] == PLAYER:
+                    tablero_draw.agentO.drawSymbolO(
+                        startX=tablero_draw.grid_map[j][0],
+                        startY=tablero_draw.grid_map[j][1],
+                        sizeGrid=size_grid_tablero,
+                        radius=radio_circulo_tablero_hijo,
+                        width=widthline_circulo_tablero_hijo
+                    )
+                elif tablero[j] == IA:
+                    tablero_draw.agentX.drawSymbolX(
+                        startX=tablero_draw.grid_map[j][0],
+                        startY=tablero_draw.grid_map[j][1],
+                        sizeGrid=size_grid_tablero,
+                        widthLineSymbol=3,
+                        margin=5
+                    )
+                    
+            if self.nodo_3_arbol_de_desiciones == None:
+                self.nodo_3_arbol_de_desiciones = nodo
+        
+        lastX = 0
+        
+        for nodo in self.nodo_3_arbol_de_desiciones.children:
+            tablero = nodo.get_attr("tablero")            
+
+            size_grid_tablero = 33
+            widthline_tablero = 4
+            width_tablero_hijo = size_grid_tablero * 3 + (widthline_tablero * 2)
+            
+            tablero_draw = BoardFront(self.colors.azul, self.colors.secondary, self.colors.terciary, self.display)            
+            tablero_draw.draw(lastX, 450, sizeGrid=size_grid_tablero, widhtLine=widthline_tablero)
+            
+            radio_circulo_tablero_hijo = 12
+            widthline_circulo_tablero_hijo = 4
+            
+            lastX += tablero_draw.width + 20
+            
+            for j in range(9):
+                if tablero[j] == PLAYER:
+                    tablero_draw.agentO.drawSymbolO(
+                        startX=tablero_draw.grid_map[j][0],
+                        startY=tablero_draw.grid_map[j][1],
+                        sizeGrid=size_grid_tablero,
+                        radius=radio_circulo_tablero_hijo,
+                        width=widthline_circulo_tablero_hijo
+                    )
+                elif tablero[j] == IA:
+                    tablero_draw.agentX.drawSymbolX(
+                        startX=tablero_draw.grid_map[j][0],
+                        startY=tablero_draw.grid_map[j][1],
+                        sizeGrid=size_grid_tablero,
+                        widthLineSymbol=3,
+                        margin=5
+                    )
+         
         
     def cargar_pestaña_partida(self):
         # Dibujamos el texto "Bienvenido a:"
@@ -538,3 +670,5 @@ class MainScreen:
                 sizeGrid=60,
                 widthLineSymbol=7
             )
+                
+                
