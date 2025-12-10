@@ -381,12 +381,15 @@ class MainScreen:
     
     def effectWinDiagonalLeft(self):
         if (self.winDiagonalLeft()):
-            for column in range(180):
+            grid_map = self.boardFront.grid_map
+            
+            cantidad_de_pasos = 180
+            for pasos in range(cantidad_de_pasos):
                 pygame.draw.line(
                     self.display,
-                    self.colors.terciary if self.turn == 1 else self.colors.secondary,
-                    (315 + column, 190 + column),
-                    (315 + column, 190 + column),
+                    (255,0,0),
+                    (grid_map[0][0] + 10, grid_map[0][1] + 10),
+                    (grid_map[8][2] - 10, grid_map[8][3] - 10),
                     5
                 )
                 pygame.display.flip()
@@ -397,12 +400,15 @@ class MainScreen:
                 
     def effectWinDiagonalRight(self):
         if (self.winDiagonalRight()):
-            for column in range(180):
+            grid_map = self.boardFront.grid_map
+            
+            cantidad_de_pasos = 180
+            for pasos in range(cantidad_de_pasos):
                 pygame.draw.line(
                     self.display,
-                    self.colors.terciary if self.turn == 1 else self.colors.secondary,
-                    (495 - column, 190 + column),
-                    (495 - column, 190 + column),
+                    (255,0,0),
+                    (grid_map[6][0] + 10, grid_map[6][3] - 10),
+                    (grid_map[2][2] - 10, grid_map[2][3] + 10),
                     5
                 )
                 pygame.display.flip()

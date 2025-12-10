@@ -64,12 +64,6 @@ class BoardFront:
             8: (left + sizeGrid * 2 + widhtLine * 2, top + sizeGrid * 2 + widhtLine * 2, left + sizeGrid * 3 + widhtLine * 2, top + sizeGrid * 3 + widhtLine * 2),
         }
         
-        # print(self.grid_map)
-        # for num_casilla in self.grid_map:
-        #     casilla = self.grid_map[num_casilla]
-        #     casillaRect = pygame.Rect((casilla[0], casilla[1], sizeGrid, sizeGrid))
-        #     pygame.draw.rect(self.screen, (255,255,255), casillaRect, border_top_left_radius=3, border_bottom_right_radius=3)
-        
         for row in range(2):
             
             rowLine = pygame.Rect((
