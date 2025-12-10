@@ -51,9 +51,9 @@ class MainScreen:
         self.boton_partida = None
         self.boton_arbol_de_desiciones = None
         
-        self.arbol_de_desiciones = None
-        self.nodo_actual_arbol_de_desiciones = None
-        self.nodo_3_arbol_de_desiciones = None
+        self.nodo_actual_partida_arbol_de_desiciones = None # Este es el nodo que se muestra en la vista de la partida
+        self.nodo_actual_vista_arbol_de_desiciones = None # este es el nodo padre que se muestra en el arbol de desiciones
+        self.nodo_extendido_arbol_de_desiciones = None # Este es el nodo de uno de los hijos que se muestra en el arbol de desiciones
         
         
         self.grid_map = {
@@ -185,12 +185,13 @@ class MainScreen:
         casilla = self.boardFront.grid_map[grid]
         
         if self.turno_n == 0:
-            self.arbol_de_desiciones = Node("a", tablero=self.boardState.copy(), jugador=PLAYER)
+            self.nodo_actual_partida_arbol_de_desiciones = Node("a", tablero=self.boardState.copy(), jugador=PLAYER)
+            self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
         
         # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
      
     def turnoIA(self):
-        mejor_movimiento = mejor_movimiento_IA(self.turno_n, self.arbol_de_desiciones)
+        mejor_movimiento = mejor_movimiento_IA(self.turno_n, self.nodo_actual_arbol_de_desiciones)
                         
         if mejor_movimiento == -1:
             print("No se puede realizar la jugada")
@@ -430,11 +431,19 @@ class MainScreen:
         #     tablero_draw.draw(self.widht // 2 - (width_tablero // 2), 190, sizeGrid=size_grid_tablero, widhtLine=widthline_tablero)
         #     return
         
+        def accion_boton_ver_nodo_padre():
+            if self.nodo_actual_arbol_de_desiciones.parent != None:
+                self.nodo_actual_arbol_de_desiciones = self.nodo_actual_arbol_de_desiciones.parent
+            else:
+                messagebox.showwarning("Error", "No se puede acceder al nodo padre")
+        
+        def accion_boton_ver_estado_actual():
+        
         self.cargar_tableros_arbol_de_desiciones()
         width_boton_ver_nodo_padre = 200
         width_boton_ver_estado_actual = 200
         
-        boton_ver_nodo_padre = Boton(self.widht - width_boton_ver_nodo_padre - 20, 60, width_boton_ver_nodo_padre, 40, "Ver nodo padre", self.colors.secondary, self.colors.terciary, None)
+        boton_ver_nodo_padre = Boton(self.widht - width_boton_ver_nodo_padre - 20, 60, width_boton_ver_nodo_padre, 40, "Ver nodo padre", self.colors.secondary, self.colors.terciary, accion=accion_boton_ver_nodo_padre)
         boton_ver_estado_actual = Boton(self.widht - width_boton_ver_estado_actual - 20, boton_ver_nodo_padre.bottom + 20, width_boton_ver_estado_actual, 40, "Ver estado actual", self.colors.secondary, self.colors.terciary, None)
         
         
@@ -446,7 +455,7 @@ class MainScreen:
         widthline_tablero_padre = 8
         width_tablero_padre = size_grid_tablero_padre * 3 + (widthline_tablero_padre * 2)
         
-        tablero_padre = self.arbol_de_desiciones.get_attr("tablero") 
+        tablero_padre = self.nodo_actual_arbol_de_desiciones.get_attr("tablero") 
         tablero_padre_draw = BoardFront(self.colors.azul, self.colors.secondary, self.colors.terciary, self.display)
         tablero_padre_draw.draw(self.widht // 2 - (width_tablero_padre // 2), 100, sizeGrid=size_grid_tablero_padre, widhtLine=widthline_tablero_padre)
         radio_circulo_tablero_padre = 20
@@ -469,7 +478,7 @@ class MainScreen:
                     widthLineSymbol=7
                 )
                 
-        lastX = 0
+        lastX = 20
         for nodo in self.arbol_de_desiciones.children:
             tablero = nodo.get_attr("tablero")            
 
@@ -478,7 +487,7 @@ class MainScreen:
             width_tablero_hijo = size_grid_tablero * 3 + (widthline_tablero * 2)
             
             tablero_draw = BoardFront(self.colors.morado, self.colors.secondary, self.colors.terciary, self.display)            
-            tablero_draw.draw(lastX, 300, sizeGrid=size_grid_tablero, widhtLine=widthline_tablero)
+            tablero_draw.draw(lastX, 350, sizeGrid=size_grid_tablero, widhtLine=widthline_tablero)
             
             radio_circulo_tablero_hijo = 12
             widthline_circulo_tablero_hijo = 4
@@ -506,7 +515,7 @@ class MainScreen:
             if self.nodo_3_arbol_de_desiciones == None:
                 self.nodo_3_arbol_de_desiciones = nodo
         
-        lastX = 0
+        lastX = 20
         
         for nodo in self.nodo_3_arbol_de_desiciones.children:
             tablero = nodo.get_attr("tablero")            
@@ -516,7 +525,7 @@ class MainScreen:
             width_tablero_hijo = size_grid_tablero * 3 + (widthline_tablero * 2)
             
             tablero_draw = BoardFront(self.colors.azul, self.colors.secondary, self.colors.terciary, self.display)            
-            tablero_draw.draw(lastX, 450, sizeGrid=size_grid_tablero, widhtLine=widthline_tablero)
+            tablero_draw.draw(lastX, 550, sizeGrid=size_grid_tablero, widhtLine=widthline_tablero)
             
             radio_circulo_tablero_hijo = 12
             widthline_circulo_tablero_hijo = 4
