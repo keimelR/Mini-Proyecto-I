@@ -113,15 +113,14 @@ class MainScreen:
                         # Obtenemos la cuadricula del tablero que fue marcada
                         grid = self.markGrid(areaX=mouse_x, areaY=mouse_y)
                         
-                        print(self.boardFront.grid_map)
-                        print("Casilla: ", grid)
-                        print("Contenido Casilla: ", self.boardState[grid])
-                        print("Coordenadas: ", self.boardFront.grid_map[grid])
+                        if grid == -1:
+                            return
                         
                         if self.boardState[grid] == IA or self.boardState[grid] == PLAYER:
                             # TODO. Pop-Up Anunciando que cuadricula ocupada
                             messagebox.showwarning("Cuadricula Ocupada", "La cuadricula seleccionada ya esta ocupada")
                             return
+                        
                         
                         # Mientras no exista un ganador se puede jugar
                         if self.existWinner == 0:
@@ -182,14 +181,6 @@ class MainScreen:
         
         # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
      
-    def cambiarPestañaPartida(self):
-        self.pestaña = PESTAÑA_PARTIDA
-        print("Partida")
-                 
-    def cambiarPestañaArbolDeDesiciones(self):
-        self.pestaña = PESTAÑA_ARBOL_DE_DESICIONES
-        print("Arbol de desiciones")
-                    
     def turnoIA(self):
         mejor_movimiento = mejor_movimiento_IA(self.boardState.copy(), self.turno_n)
                         
@@ -210,6 +201,15 @@ class MainScreen:
 
         # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
       
+     
+    def cambiarPestañaPartida(self):
+        self.pestaña = PESTAÑA_PARTIDA
+        print("Partida")
+                 
+    def cambiarPestañaArbolDeDesiciones(self):
+        self.pestaña = PESTAÑA_ARBOL_DE_DESICIONES
+        print("Arbol de desiciones")
+                    
     def resetGame(self):
         self.existWinner = 0
         self.turn = PLAYER
@@ -484,16 +484,14 @@ class MainScreen:
             align="center"
         )
         
-        if self.pestaña == PESTAÑA_PARTIDA:
-            # Contador de Victorias del Agente AI
-            self.print(
-                typeFont=TypeFont.TITTLE_LARGE,
-                text="00",
-                areaX=710,
-                areaY=480,
-                align="center"
-            )
-   
+        self.print(
+            typeFont=TypeFont.TITTLE_LARGE,
+            text="00",
+            areaX=710,
+            areaY=480,
+            align="center"
+        )
+
         self.print(
             typeFont=TypeFont.TITTLE_MEDIUM,
             text="Reiniciar Juego",
@@ -520,3 +518,23 @@ class MainScreen:
             width=1,
             border_radius=20
         )
+        
+        for i in range(9):
+            casilla = self.boardFront.grid_map[i]
+            
+            if self.boardState[i] == PLAYER:
+                self.boardFront.agentO.drawSymbolO(
+                    startX= casilla[0],
+                    startY= casilla[1],
+                    sizeGrid=60,
+                    radius=20,
+                    width=7
+                )
+            
+            if self.boardState[i] == IA:
+                self.boardFront.agentX.drawSymbolX(
+                startX=casilla[0],
+                startY=casilla[1],
+                sizeGrid=60,
+                widthLineSymbol=7
+            )
