@@ -3,6 +3,7 @@ import time
 import pygame.math
 from constantes import *
 from tkinter import messagebox
+from model.Button import Boton
 
 from typing import Tuple
 
@@ -12,6 +13,9 @@ from model.Images import Images
 from model.Colors import Colors
 from minimax import mejor_movimiento_IA
 
+
+PESTAÑA_PARTIDA = 0
+PESTAÑA_ARBOL_DE_DESICIONES = 1
 
 SIZE_GRID = 60
 WIDTH_LINE_CASILLA = 10
@@ -40,6 +44,11 @@ class MainScreen:
         self.numberWinUser = 0
         self.numberWinAgentAi = 0
         
+        self.pestaña = PESTAÑA_PARTIDA
+        
+        self.boton_partida = None
+        self.boton_arbol_de_desiciones = None
+        
         self.grid_map = {
         # Fila 1 (Y: 190 - 250)
         0: (self.leftBoard, self.topBoard, self.widht // 3, self.height // 1.5),
@@ -66,125 +75,33 @@ class MainScreen:
     def on_execute(self):
         self.on_init()
         
-        self.display.fill(self.colors.background)
-        
-        # Dibujamos el texto "Bienvenido a:"
-        self.print(
-            typeFont=TypeFont.HEADLINE,
-            text="Bienvenido a:",
-            areaX=(self.widht // 2),
-            areaY=0 + (self.height // 60),
-            align="center"
-        )
-        
-        # Dibujamos el texto "Tic Tac Toe"
-        self.print(
-            typeFont=TypeFont.DISPLAY,
-            text="Tic Tac Toe",
-            areaX=self.widht // 2,
-            areaY=32 + (self.height // 40),
-            align="center"
-        )
-        
-        self.drawCard()
-        
-        # Dibujamos el Tablero
-        self.boardFront.setScreen(self.display)
-        self.boardFront.draw(self.leftBoard, self.topBoard, 60, 10)
-    
-        # Dibujamos el CardIcon del Usuario
-        self.drawCardIcon(
-            left=20 + (self.widht // 4),
-            top=440,
-            width=225,
-            height=70,
-            color=self.colors.secondary,
-            imgPath=self.images.userHumanLogo,
-            coordinates=(20 + (self.widht // 4), 440)
-        )
-        
-        # Dibujamos el CardIcon del Agente AI
-        self.drawCardIcon(
-            left=565,
-            top=440,
-            width=225,
-            height=70,
-            color=self.colors.terciary,
-            imgPath=self.images.userAgentAi,
-            coordinates=(565, 440)
-        )
-        
-        # Dibujamos el texto "Usuario"
-        self.print(
-            typeFont=TypeFont.TITTLE_LARGE,
-            text="Usuario",
-            areaX=435,
-            areaY=440,
-            align="center"
-        )
-        
-        # Dibujamos el texto de "Agente AI"
-        self.print(
-            typeFont=TypeFont.TITTLE_LARGE,
-            text="Agente AI",
-            areaX=710,
-            areaY=440,
-            align="center"
-        )
-        
-        # Contador de Victorias del Usuario
-        self.print(
-            typeFont=TypeFont.TITTLE_LARGE,
-            text="00",
-            areaX=435,
-            areaY=480,
-            align="center"
-        )
-        
-        # Contador de Victorias del Agente AI
-        self.print(
-            typeFont=TypeFont.TITTLE_LARGE,
-            text="00",
-            areaX=710,
-            areaY=480,
-            align="center"
-        )
-   
-        self.print(
-            typeFont=TypeFont.TITTLE_MEDIUM,
-            text="Reiniciar Juego",
-            areaX=self.widht * 0.5,
-            areaY=615,
-            align="center",
-            color=(100, 100,100)
-        )
-        
-        buttonRestart = pygame.Rect(
-            self.widht * 0.4,
-            605,
-            self.widht * 0.6 - self.widht * 0.4,
-            40
-        )
-        pygame.draw.rect(self.display, self.colors.terciary, buttonRestart,
-            width=1,
-            border_radius=20
-        )
+        self.boton_partida = Boton(10, 10, 130, 45, "Partida", self.colors.secondary, self.colors.terciary, self.cambiarPestañaPartida)
+        self.boton_arbol_de_desiciones = Boton(self.boton_partida.right + 10, self.boton_partida.top, 230, 45, "Arbol de Desiciones", self.colors.secondary, self.colors.terciary, self.cambiarPestañaArbolDeDesiciones)        
         
         while(self.running):  
             for event in pygame.event.get():
                 self.on_event(event)
             
-            self.drawTitleCard(
-                typeFont=TypeFont.HEADLINE,
-                text="Turno: Usuario" if self.turn == PLAYER else "Turno: Agente AI",
-                coordinates=(self.widht // 2, 83 + 20),
-                align="center"
-            )
+            self.display.fill(self.colors.background)
+            
+            if self.pestaña == PESTAÑA_PARTIDA:
+                self.cargar_pestaña_partida()
+            
+            self.boton_partida.draw(self.display)
+            self.boton_arbol_de_desiciones.draw(self.display)
+            
             pygame.display.flip()
             
     def on_event(self, event: pygame.event.Event):
         if event.type == pygame.QUIT:
             self.running = False
+        
+        if self.boton_partida:
+            self.boton_partida.handle_event(event)
+            
+        if self.boton_arbol_de_desiciones:
+            self.boton_arbol_de_desiciones.handle_event(event)    
+        
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 mouse_x, mouse_y = event.pos
@@ -264,6 +181,14 @@ class MainScreen:
         )
         
         # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
+     
+    def cambiarPestañaPartida(self):
+        self.pestaña = PESTAÑA_PARTIDA
+        print("Partida")
+                 
+    def cambiarPestañaArbolDeDesiciones(self):
+        self.pestaña = PESTAÑA_ARBOL_DE_DESICIONES
+        print("Arbol de desiciones")
                     
     def turnoIA(self):
         mejor_movimiento = mejor_movimiento_IA(self.boardState.copy(), self.turno_n)
@@ -482,4 +407,116 @@ class MainScreen:
             areaX=areaX,
             areaY=areaY,
             align=align
+        )
+        
+        
+    def cargar_pestaña_partida(self):
+        # Dibujamos el texto "Bienvenido a:"
+        self.print(
+            typeFont=TypeFont.HEADLINE,
+            text="Bienvenido a:",
+            areaX=(self.widht // 2),
+            areaY=0 + (self.height // 60),
+            align="center"
+        )
+        
+        # Dibujamos el texto "Tic Tac Toe"
+        self.print(
+            typeFont=TypeFont.DISPLAY,
+            text="Tic Tac Toe",
+            areaX=self.widht // 2,
+            areaY=32 + (self.height // 40),
+            align="center"
+        )
+        
+        self.drawCard()
+        
+        # Dibujamos el Tablero
+        self.boardFront.setScreen(self.display)
+        self.boardFront.draw(self.leftBoard, self.topBoard, 60, 10)
+    
+        # Dibujamos el CardIcon del Usuario
+        self.drawCardIcon(
+            left=20 + (self.widht // 4),
+            top=440,
+            width=225,
+            height=70,
+            color=self.colors.secondary,
+            imgPath=self.images.userHumanLogo,
+            coordinates=(20 + (self.widht // 4), 440)
+        )
+        
+        # Dibujamos el CardIcon del Agente AI
+        self.drawCardIcon(
+            left=565,
+            top=440,
+            width=225,
+            height=70,
+            color=self.colors.terciary,
+            imgPath=self.images.userAgentAi,
+            coordinates=(565, 440)
+        )
+        
+        # Dibujamos el texto "Usuario"
+        self.print(
+            typeFont=TypeFont.TITTLE_LARGE,
+            text="Usuario",
+            areaX=435,
+            areaY=440,
+            align="center"
+        )
+        
+        # Dibujamos el texto de "Agente AI"
+        self.print(
+            typeFont=TypeFont.TITTLE_LARGE,
+            text="Agente AI",
+            areaX=710,
+            areaY=440,
+            align="center"
+        )
+        
+        # Contador de Victorias del Usuario
+        self.print(
+            typeFont=TypeFont.TITTLE_LARGE,
+            text="00",
+            areaX=435,
+            areaY=480,
+            align="center"
+        )
+        
+        if self.pestaña == PESTAÑA_PARTIDA:
+            # Contador de Victorias del Agente AI
+            self.print(
+                typeFont=TypeFont.TITTLE_LARGE,
+                text="00",
+                areaX=710,
+                areaY=480,
+                align="center"
+            )
+   
+        self.print(
+            typeFont=TypeFont.TITTLE_MEDIUM,
+            text="Reiniciar Juego",
+            areaX=self.widht * 0.5,
+            areaY=615,
+            align="center",
+            color=(100, 100,100)
+        )
+        
+        self.drawTitleCard(
+            typeFont=TypeFont.HEADLINE,
+            text="Turno: Usuario" if self.turn == PLAYER else "Turno: Agente AI",
+            coordinates=(self.widht // 2, 83 + 20),
+            align="center"
+        )
+        
+        buttonRestart = pygame.Rect(
+            self.widht * 0.4,
+            605,
+            self.widht * 0.6 - self.widht * 0.4,
+            40
+        )
+        pygame.draw.rect(self.display, self.colors.terciary, buttonRestart,
+            width=1,
+            border_radius=20
         )
