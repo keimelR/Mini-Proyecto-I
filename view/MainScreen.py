@@ -401,7 +401,7 @@ class MainScreen:
                 
                 progreso = pasos / cantidad_de_pasos
                 
-                # Coordenadas CORRECTAS para diagonal derecha
+                # Coordenadas para diagonal derecha
                 start_x = self.boardFront.grid_map[2][2] - 10  # Superior derecha
                 start_y = self.boardFront.grid_map[2][1] + 10
                 end_x = self.boardFront.grid_map[6][0] + 10    # Inferior izquierda
