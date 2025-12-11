@@ -186,12 +186,18 @@ class MainScreen:
         
         if self.turno_n == 0:
             self.nodo_actual_partida_arbol_de_desiciones = Node("a", tablero=self.boardState.copy(), jugador=PLAYER)
-            self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
+        else:
+            for nodo in self.nodo_actual_partida_arbol_de_desiciones.children:
+                if nodo.get_attr("tablero") == self.boardState:
+                    self.nodo_actual_partida_arbol_de_desiciones = nodo
+                    break
         
+        self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
         # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
      
     def turnoIA(self):
-        mejor_movimiento = mejor_movimiento_IA(self.turno_n, self.nodo_actual_arbol_de_desiciones)
+
+        mejor_movimiento = mejor_movimiento_IA(self.turno_n, self.nodo_actual_partida_arbol_de_desiciones)
                         
         if mejor_movimiento == -1:
             print("No se puede realizar la jugada")
@@ -480,7 +486,9 @@ class MainScreen:
                 )
                 
         lastX = 20
-        for nodo in self.arbol_de_desiciones.children:
+        
+        print(self.nodo_actual_partida_arbol_de_desiciones.children)
+        for nodo in self.nodo_actual_arbol_de_desiciones.children:
             tablero = nodo.get_attr("tablero")            
 
             size_grid_tablero = 33
@@ -513,12 +521,12 @@ class MainScreen:
                         margin=5
                     )
                     
-            if self.nodo_3_arbol_de_desiciones == None:
-                self.nodo_3_arbol_de_desiciones = nodo
+            if self.nodo_extendido_arbol_de_desiciones == None:
+                self.nodo_extendido_arbol_de_desiciones = nodo
         
         lastX = 20
         
-        for nodo in self.nodo_3_arbol_de_desiciones.children:
+        for nodo in self.nodo_extendido_arbol_de_desiciones.children:
             tablero = nodo.get_attr("tablero")            
 
             size_grid_tablero = 33
