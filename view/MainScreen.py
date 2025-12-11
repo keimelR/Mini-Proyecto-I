@@ -322,16 +322,20 @@ class MainScreen:
     def effectWinHorizontal(self, row: int):
         if self.winHorizontal():
             cantidad_de_pasos = 180
-            for pasos in range(cantidad_de_pasos, 0, -1):
+            for pasos in range(1, cantidad_de_pasos + 1):
+                progreso = pasos / cantidad_de_pasos
+                x_final = self.boardFront.left + (self.boardFront.width * progreso)
+                
                 pygame.draw.line(
                     self.display,
                     (255,0,0),
                     (self.boardFront.left, self.boardFront.top + (row * (SIZE_GRID + WIDTH_LINE_CASILLA)) + SIZE_GRID // 2),
-                    (self.boardFront.left + (self.boardFront.width //  pasos), self.boardFront.top + (row * (SIZE_GRID + WIDTH_LINE_CASILLA)) + SIZE_GRID // 2),
+                    (x_final, self.boardFront.top + (row * (SIZE_GRID + WIDTH_LINE_CASILLA)) + SIZE_GRID // 2),
                     5
                 )
                 pygame.display.flip()
                 pygame.time.delay(5)
+
 
     def winVertical(self) -> bool:
         return (self.boardState[0] == self.turn and self.boardState[3] == self.turn and self.boardState[6] == self.turn) or (self.boardState[1] == self.turn and self.boardState[4] == self.turn and self.boardState[7] == self.turn) or (self.boardState[2] == self.turn and self.boardState[5] == self.turn and self.boardState[8] == self.turn)
@@ -340,12 +344,15 @@ class MainScreen:
         print(column)
         if (self.winVertical()):
             cantidad_de_pasos = 180
-            for pasos in range(cantidad_de_pasos, 0, -1):
+            for pasos in range(1, cantidad_de_pasos + 1):
+                progreso = pasos / cantidad_de_pasos
+                y_final = self.boardFront.top + (self.boardFront.height * progreso)
+                
                 pygame.draw.line(
                     self.display,
                     (255,0,0),
                     (self.boardFront.left + (column * (SIZE_GRID + WIDTH_LINE_CASILLA)) + SIZE_GRID // 2, self.boardFront.top),
-                    (self.boardFront.left + (column * (SIZE_GRID + WIDTH_LINE_CASILLA)) + SIZE_GRID // 2, self.boardFront.top + (self.boardFront.height //  pasos)),
+                    (self.boardFront.left + (column * (SIZE_GRID + WIDTH_LINE_CASILLA)) + SIZE_GRID // 2, y_final),
                     5
                 )
                 pygame.display.flip()
@@ -360,11 +367,22 @@ class MainScreen:
 
             cantidad_de_pasos = 180
             for pasos in range(cantidad_de_pasos):
+                progreso = pasos / cantidad_de_pasos
+
+                # Calcular punto final basado en progreso
+                start_x = self.boardFront.grid_map[0][0] + 10
+                start_y = self.boardFront.grid_map[0][1] + 10
+                end_x = self.boardFront.grid_map[8][2] - 10
+                end_y = self.boardFront.grid_map[8][3] - 10
+                
+                current_x = start_x + (end_x - start_x) * progreso
+                current_y = start_y + (end_y - start_y) * progreso
+
                 pygame.draw.line(
                     self.display,
                     (255,0,0),
-                    (grid_map[0][0] + 10, grid_map[0][1] + 10),
-                    (grid_map[8][2] - 10, grid_map[8][3] - 10),
+                    (start_x, start_y),
+                    (current_x, current_y),
                     5
                 )
                 pygame.display.flip()
@@ -380,12 +398,23 @@ class MainScreen:
 
             cantidad_de_pasos = 180
             for pasos in range(cantidad_de_pasos):
+                
+                progreso = pasos / cantidad_de_pasos
+                
+                # Coordenadas para diagonal derecha
+                start_x = self.boardFront.grid_map[2][2] - 10  # Superior derecha
+                start_y = self.boardFront.grid_map[2][1] + 10
+                end_x = self.boardFront.grid_map[6][0] + 10    # Inferior izquierda
+                end_y = self.boardFront.grid_map[6][3] - 10
+                
+                current_x = start_x + (end_x - start_x) * progreso
+                current_y = start_y + (end_y - start_y) * progreso
+                
                 pygame.draw.line(
                     self.display,
                     (255, 0, 0),
-                #    self.boardFront.agentO.color if self.turn == PLAYER else self.boardFront.agentX.color,
-                    (grid_map[6][0] + 10, grid_map[6][3] - 10),
-                    (grid_map[2][2] - 10, grid_map[2][1] + 10),
+                    (start_x, start_y),
+                    (current_x, current_y),
                     5
                 )
                 pygame.display.flip()
