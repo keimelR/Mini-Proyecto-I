@@ -493,6 +493,17 @@ class MainScreen:
             self.nodo_actual_arbol_de_desiciones = nodo
 
         turno = self.nodo_actual_arbol_de_desiciones.get_attr("jugador")
+        
+        # ----------------------------------------------------
+        # Parámetros de conexión y coordenadas del padre
+        # ----------------------------------------------------
+        color_linea_conexion = self.colors.terciary
+        
+        # Coordenadas X del centro del tablero padre
+        x_centro_padre = self.widht // 2 
+        # Coordenadas Y del borde inferior del tablero padre (100 es la Y de inicio del tablero)
+        y_borde_inferior_padre = 100 + (size_grid_tablero_padre * 3 + widthline_tablero_padre * 2)
+        # ----------------------------------------------------
 
         # Indicamos el tipo de jugador del nodo actual
         self.print(
@@ -526,26 +537,61 @@ class MainScreen:
                     widthLineSymbol=7
                 )
 
-        lastX = 20
+        # --- CÁLCULO PARA CENTRAR LOS TABLEROS HIJOS ---
+        size_grid_tablero = 30
+        widthline_tablero = 4
+        width_tablero_hijo = size_grid_tablero * 3 + (widthline_tablero * 2)
+        espacio_entre_tableros = 20
+        
+        num_hijos = len(self.nodo_actual_arbol_de_desiciones.children)
+        
+        # Coordenada Y de inicio de la segunda fila
+        y_inicio_hijos = 500
+        
+        if num_hijos > 0:
+            # Calcular el ancho total que ocuparán los tableros y los espacios
+            ancho_total_tableros = (num_hijos * width_tablero_hijo)
+            ancho_total_espacios = (num_hijos - 1) * espacio_entre_tableros
+            ancho_total_ocupado = ancho_total_tableros + ancho_total_espacios
+            
+            # Calcular la coordenada X de inicio para centrar el grupo
+            lastX = (self.widht // 2) - (ancho_total_ocupado // 2)
+        else:
+            lastX = 20 # Valor predeterminado si no hay hijos
+        # --- FIN DEL CÁLCULO ---
+
+        # Posición Y del borde superior de la fila de hijos
+        y_borde_superior_hijo = y_inicio_hijos 
 
         for nodo in self.nodo_actual_arbol_de_desiciones.children:
             tablero = nodo.get_attr("tablero")
             turno = nodo.get_attr("jugador")
 
-            size_grid_tablero = 30
-            widthline_tablero = 4
-            width_tablero_hijo = size_grid_tablero * 3 + (widthline_tablero * 2)
-
+            # 1. Dibujar el tablero hijo
             tablero_draw = BoardFront(self.colors.morado if turno == PLAYER else self.colors.azul, self.colors.secondary, self.colors.terciary, self.display, accion=accion_click_tablero, nodo=nodo)
-            tablero_draw.draw(lastX, 500, sizeGrid=size_grid_tablero, widhtLine=widthline_tablero)
+            tablero_draw.draw(lastX, y_inicio_hijos, sizeGrid=size_grid_tablero, widhtLine=widthline_tablero)
 
             self.subTablerosArbolDeDesiciones.append(tablero_draw)
+            
+            # 2. Dibujar la línea de conexión al tablero padre (CORRECCIÓN APLICADA AQUÍ)
+            x_centro_hijo = lastX + (width_tablero_hijo // 2)
+            
+            # Conexión del centro inferior del padre al centro superior del hijo
+            pygame.draw.line( # <--- CORREGIDO: Usar pygame.draw.line()
+                self.display, # Pasar la superficie de dibujo
+                color_linea_conexion,
+                (x_centro_padre, y_borde_inferior_padre),
+                (x_centro_hijo, y_borde_superior_hijo),
+                3
+            )
 
             radio_circulo_tablero_hijo = 10
             widthline_circulo_tablero_hijo = 4
 
-            lastX += tablero_draw.width + 20
+            # Actualizar la posición X para el siguiente tablero
+            lastX += tablero_draw.width + espacio_entre_tableros
 
+            # 3. Dibujar los símbolos del tablero hijo
             for j in range(9):
                 if tablero[j] == PLAYER:
                     tablero_draw.agentO.drawSymbolO(
