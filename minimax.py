@@ -1,8 +1,10 @@
 from bigtree import Node
 from constantes import *
-# Los players son PLAYER y la IA es 1
+# Los players son PLAYER y la IA es 1 (Asumiendo que IA=1 y PLAYER=-1 para Minimax)
 
 def minimax(tablero: list[int], turno: int, profundidad: int):
+    # Esta función se mantiene para propósitos de la utilidad mejor_movimiento_IA.
+    # No es la que asigna los valores a los nodos, sino la que calcula el puntaje puro.
     analisis_victoria = detectar_victoria(tablero)
     if analisis_victoria != 0 or not any(x == VACIO for x in tablero):
         return (analisis_victoria)
@@ -55,44 +57,76 @@ def mejor_movimiento_IA(profundidad: int, tablero: list[int]):
         
 
 def recorrer_arbol_de_nodos(nodo_raiz: Node, profundidad: int, turno: int):
+    """
+    Recorre el árbol, construye los nodos y asigna el valor Minimax a cada nodo.
+    """
     nodo_actual = nodo_raiz
     tablero = nodo_actual.get_attr("tablero")
     
     analisis_victoria = detectar_victoria(tablero)
+    
+    # Caso Base: Victoria o Empate (Hoja del árbol)
     if analisis_victoria != 0 or not any(x == VACIO for x in tablero):
-        nodo_raiz.set_attrs({"tablero": tablero.copy(), "profundidad": profundidad, "victoria": analisis_victoria})
-        return (analisis_victoria)
+        # El puntaje es el resultado de la victoria/derrota/empate (0)
+        score = analisis_victoria
+        
+        # Asignamos el valor Minimax al nodo hoja
+        nodo_raiz.set_attrs({
+            "tablero": tablero.copy(),
+            "profundidad": profundidad, 
+            "victoria": analisis_victoria, 
+            "minimax_value": score # <--- Valor asignado
+        })
+        return score
     
     if turno == PLAYER:
+        # Minimizador
         mejor_puntaje = float('inf')
         for i in range(9):
             if tablero[i] == VACIO:
                 tablero[i] = PLAYER
+                
+                # Crear el nodo hijo
                 nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(), profundidad=profundidad, parent=nodo_raiz, jugador=PLAYER)
                 
+                # Llamada recursiva (obtiene el valor Minimax del hijo)
                 resultado = recorrer_arbol_de_nodos(nodo_actual, profundidad=profundidad + 1, turno=IA)
                 
                 tablero[i] = VACIO
                 mejor_puntaje = min(mejor_puntaje, resultado)
+        
+        # Asignamos el valor Minimax al nodo actual (Minimizador)
+        nodo_raiz.set_attrs({"minimax_value": mejor_puntaje}) # <--- Valor asignado
         return mejor_puntaje
     
     elif turno == IA:
+        # Maximizador
         mejor_puntaje = -float('inf')
         for i in range(9):
             if tablero[i] == VACIO:
                 tablero[i] = IA
                 
+                # Crear el nodo hijo
                 nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(),profundidad=profundidad, parent=nodo_raiz, jugador=IA)
+                
+                # Llamada recursiva (obtiene el valor Minimax del hijo)
                 resultado = recorrer_arbol_de_nodos(nodo_actual, profundidad + 1, turno=PLAYER)
                 
                 tablero[i] = VACIO
                 mejor_puntaje = max(mejor_puntaje, resultado)
+        
+        # Asignamos el valor Minimax al nodo actual (Maximizador)
+        nodo_raiz.set_attrs({"minimax_value": mejor_puntaje}) # <--- Valor asignado
         return mejor_puntaje
     else:
         print("Esto no deberia de pasar WTF")
         exit()
 
 def cargar_arbol_de_nodos(nodo_raiz: Node, profundidad: int):
+    """
+    Inicia la construcción del árbol desde los hijos del nodo raíz y asigna el valor Minimax
+    al nodo raíz.
+    """
     mejor_puntaje = -float('inf')
     mejor_movimiento = -1
     
@@ -102,7 +136,10 @@ def cargar_arbol_de_nodos(nodo_raiz: Node, profundidad: int):
         if tablero[i] == VACIO:
             tablero[i] = PLAYER
             
+            # Crear el nodo hijo
             nodo_actual = Node(str(profundidad) + str(i), tablero=tablero.copy(), profundidad=profundidad, parent=nodo_raiz, jugador=PLAYER)
+            
+            # La llamada recursiva construye el subárbol y asigna valores
             resultado = recorrer_arbol_de_nodos(nodo_actual, profundidad + 1, IA)
                 
             tablero[i] = VACIO
@@ -110,6 +147,9 @@ def cargar_arbol_de_nodos(nodo_raiz: Node, profundidad: int):
             if resultado > mejor_puntaje:
                 mejor_movimiento = i
                 mejor_puntaje = resultado
+    
+    # Asignamos el valor Minimax al nodo raíz
+    nodo_raiz.set_attrs({"minimax_value": mejor_puntaje}) # <--- Valor asignado
     return mejor_movimiento
         
 

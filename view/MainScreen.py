@@ -639,9 +639,18 @@ class MainScreen:
         # Posición Y del borde superior de la fila de hijos
         y_borde_superior_hijo = y_inicio_hijos 
 
+        # ------------------------------------------------------------------
+        # Altura donde se dibujará el valor Minimax (debajo del tablero hijo)
+        # ------------------------------------------------------------------
+        y_minimax_value = y_inicio_hijos + width_tablero_hijo + 10 # 10 píxeles de margen
+        # ------------------------------------------------------------------
+
         for nodo in self.nodo_actual_arbol_de_desiciones.children:
             tablero = nodo.get_attr("tablero")
             turno = nodo.get_attr("jugador")
+            
+            # Obtener el valor Minimax del nodo hijo
+            minimax_value = nodo.get_attr("minimax_value")
 
             # 1. Dibujar el tablero hijo
             tablero_draw = BoardFront(self.colors.morado if turno == PLAYER else self.colors.azul, self.colors.secondary, self.colors.terciary, self.display, accion=accion_click_tablero, nodo=nodo)
@@ -653,8 +662,8 @@ class MainScreen:
             x_centro_hijo = lastX + (width_tablero_hijo // 2)
             
             # Conexión del centro inferior del padre al centro superior del hijo
-            pygame.draw.line( # <--- CORREGIDO: Usar pygame.draw.line()
-                self.display, # Pasar la superficie de dibujo
+            pygame.draw.line( 
+                self.display, 
                 color_linea_conexion,
                 (x_centro_padre, y_borde_inferior_padre),
                 (x_centro_hijo, y_borde_superior_hijo),
@@ -663,9 +672,6 @@ class MainScreen:
 
             radio_circulo_tablero_hijo = 10
             widthline_circulo_tablero_hijo = 4
-
-            # Actualizar la posición X para el siguiente tablero
-            lastX += tablero_draw.width + espacio_entre_tableros
 
             # 3. Dibujar los símbolos del tablero hijo
             for j in range(9):
@@ -685,6 +691,24 @@ class MainScreen:
                         widthLineSymbol=3,
                         margin=5
                     )
+            
+            # 4. 🟢 DIBUJAR EL VALOR MINIMAX DEBAJO DEL TABLERO HIJO
+            if minimax_value is not None:
+                # Determinar el color: Rojo si es una victoria de la IA (Maximizador), 
+                # Morado si es una victoria del Player (Minimizador), o Neutral.
+                color_minimax = self.colors.azul if minimax_value == IA else (self.colors.morado if minimax_value == PLAYER else self.colors.secondary)
+                
+                self.print(
+                    typeFont=TypeFont.TITTLE_MEDIUM,
+                    text=f"Value: {minimax_value}",
+                    areaX=x_centro_hijo, # Centrado sobre el tablero
+                    areaY=y_minimax_value,
+                    align="center",
+                    color=color_minimax
+                )
+
+            # 5. Actualizar la posición X para el siguiente tablero
+            lastX += tablero_draw.width + espacio_entre_tableros
 
     def cargar_pestaña_partida(self):
         # Dibujamos el texto "Bienvenido a:"
