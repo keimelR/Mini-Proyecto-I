@@ -61,6 +61,7 @@ class MainScreen:
 
         self.subTablerosArbolDeDesiciones = []
 
+
         self.grid_map = {
         # Fila 1 (Y: 190 - 250)
         0: (self.leftBoard, self.topBoard, self.widht // 3, self.height // 1.5),
@@ -262,8 +263,8 @@ class MainScreen:
         self.turno_n = 0 
         
         # Resetear los nodos del árbol
-        self.nodo_actual_partida_arbol_de_desiciones = None
-        self.nodo_actual_arbol_de_desiciones = None
+        self.nodo_actual_partida_arbol_de_desiciones = self.nodo_raiz_arbol_de_desiciones
+        self.nodo_actual_arbol_de_desiciones = self.nodo_raiz_arbol_de_desiciones
         
         self.boardFront.draw(self.leftBoard, self.topBoard, 60, 10)
 
@@ -511,12 +512,13 @@ class MainScreen:
             self.nodo_actual_arbol_de_desiciones = nodo
 
         turno = self.nodo_actual_arbol_de_desiciones.get_attr("jugador")
+        is_win = self.nodo_actual_arbol_de_desiciones.get_attr("victoria")
         
         # ----------------------------------------------------
         # Parámetros de conexión y coordenadas del padre
         # ----------------------------------------------------
         color_linea_conexion = self.colors.terciary
-        
+
         # Coordenadas X del centro del tablero padre
         x_centro_padre = self.widht // 2 
         # Coordenadas Y del borde inferior del tablero padre (100 es la Y de inicio del tablero)
@@ -554,6 +556,33 @@ class MainScreen:
                     sizeGrid=size_grid_tablero_padre,
                     widthLineSymbol=7
                 )
+
+        if is_win == PLAYER:
+            self.print(
+                typeFont=TypeFont.TITTLE_LARGE,
+                text="¡Vcitoria del Usuario!",
+                areaX=self.widht // 2,
+                areaY=self.height // 2,
+                align="center"
+            )
+        
+        if is_win == IA:
+            self.print(
+                typeFont=TypeFont.TITTLE_LARGE,
+                text="¡Vcitoria de la IA!",
+                areaX=self.widht // 2,
+                areaY=self.height // 2,
+                align="center"
+            )
+            
+        if is_win == VACIO and len(self.nodo_actual_arbol_de_desiciones.children) == 0:
+            self.print(
+                typeFont=TypeFont.TITTLE_LARGE,
+                text="¡Empate!",
+                areaX=self.widht // 2,
+                areaY=self.height // 2,
+                align="center"
+            )
 
         # --- CÁLCULO PARA CENTRAR LOS TABLEROS HIJOS ---
         size_grid_tablero = 30
@@ -752,6 +781,7 @@ class MainScreen:
             border_radius=20
         )
 
+        # Dibujamos las jugadas actuales del tablero
         for i in range(9):
             casilla = self.boardFront.grid_map[i]
 
@@ -771,4 +801,3 @@ class MainScreen:
                 sizeGrid=60,
                 widthLineSymbol=7
             )
-
