@@ -178,7 +178,7 @@ class MainScreen:
 
                             self.turno_n += 1
 
-                            if(self.winVertical() or self.winHorizontal() or self.winDiagonalLeft() or self.winDiagonalRight()):
+                            if(self.winVertical() or self.winHorizontal() or self.winDiagonalLeft() or self.winDiagonalRight()):                                
                                 # Realizamos un efecto de desplazamiento por medio de una linea en la jugada ganadora
                                 self.effectWin(grid)
                                 # Almacenamos el ganador
@@ -196,6 +196,15 @@ class MainScreen:
                                 self.turno_n += 1
 
                                 if(self.winVertical() or self.winHorizontal() or self.winDiagonalLeft() or self.winDiagonalRight()):
+                                    casilla = self.boardFront.grid_map[mejor_movimiento]
+
+                                    self.boardFront.agentX.drawSymbolX(
+                                            startX= casilla[0],
+                                            startY= casilla[1],
+                                            sizeGrid=60,
+                                            widthLineSymbol=7,
+                                    )
+                                    
                                     # Realizamos un efecto de desplazamiento por medio de una linea en la jugada ganadora
                                     self.effectWin(n_casilla=mejor_movimiento)
                                     # Almacenamos el ganador
