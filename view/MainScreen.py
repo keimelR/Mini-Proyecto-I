@@ -209,65 +209,42 @@ class MainScreen:
                     
     def turnoPlayer(self, grid: int):
         self.boardState[grid] = PLAYER
+        casilla = self.boardFront.grid_map[grid]
+
+        for nodo in self.nodo_actual_partida_arbol_de_desiciones.children:
+            print(nodo.get_attr("tablero"))
+            if nodo.get_attr("tablero") == self.boardState:
+                self.nodo_actual_partida_arbol_de_desiciones = nodo
+                break
+
+        self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
+        # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
         
-        # Actualizar el árbol de decisiones con el movimiento del jugador
-        if self.turno_n == 0:
-            # Primer movimiento: crear nodo raíz
-            self.nodo_actual_partida_arbol_de_desiciones = Node("a", tablero=self.boardState.copy(), jugador=PLAYER)
-            self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
-        else:
-            # Movimientos posteriores: buscar el nodo actual que coincida con el tablero
-            # O crear un nuevo nodo hijo
-            tablero_anterior = self.boardState.copy()
-            tablero_anterior[grid] = VACIO  # Estado antes del movimiento
-            
-            # Buscar si ya existe un nodo con el estado anterior
-            nodo_encontrado = None
-            # Buscar en todos los nodos del árbol
-            if hasattr(self.nodo_actual_arbol_de_desiciones, 'leaves'):
-                for nodo in self.nodo_actual_arbol_de_desiciones.leaves:
-                    if nodo.get_attr("tablero") == tablero_anterior:
-                        nodo_encontrado = nodo
-                        break
-            
-            if nodo_encontrado:
-                # Crear nuevo nodo hijo
-                nuevo_nodo = Node(f"p{self.turno_n}_{grid}", 
-                                tablero=self.boardState.copy(), 
-                                profundidad=self.turno_n, 
-                                parent=nodo_encontrado, 
-                                jugador=PLAYER)
-                self.nodo_actual_arbol_de_desiciones = nuevo_nodo
-                self.nodo_actual_partida_arbol_de_desiciones = nuevo_nodo
-            else:
-                # Crear nuevo árbol desde el estado actual
-                self.nodo_actual_partida_arbol_de_desiciones = Node("raiz_actual", 
-                                                tablero=self.boardState.copy(), 
-                                                jugador=PLAYER)
-                self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
-     
     def turnoIA(self):
-        # Asegurarse de que tenemos un árbol
-        if self.nodo_actual_arbol_de_desiciones is None:
-            self.nodo_actual_partida_arbol_de_desiciones = Node("raiz", tablero=self.boardState.copy(), jugador=PLAYER)
-            self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
-        
-        # Obtener el mejor movimiento desde el estado actual
-        mejor_movimiento = mejor_movimiento_IA(self.turno_n, self.nodo_actual_arbol_de_desiciones)
-        
-        if mejor_movimiento != -1:
-            self.boardState[mejor_movimiento] = IA
-            
-            # Actualizar el árbol con el movimiento de la IA
-            nuevo_nodo = Node(f"ia{self.turno_n}_{mejor_movimiento}", 
-                            tablero=self.boardState.copy(), 
-                            profundidad=self.turno_n + 1, 
-                            parent=self.nodo_actual_arbol_de_desiciones, 
-                            jugador=IA)
-            self.nodo_actual_arbol_de_desiciones = nuevo_nodo
-            self.nodo_actual_partida_arbol_de_desiciones = nuevo_nodo
-        
+        mejor_movimiento = mejor_movimiento_IA(self.turno_n, self.boardState)
+
+        if mejor_movimiento == -1:
+            print("No se puede realizar la jugada")
+            print(self.boardState)
+            return
+        self.boardState[mejor_movimiento] = IA
+        casilla = self.boardFront.grid_map[mejor_movimiento]
+
+        # 2. Buscamos y actualizamos el nodo después del movimiento de la IA
+        for nodo in self.nodo_actual_partida_arbol_de_desiciones.children:
+            # Comparamos el tablero del nodo hijo con el estado actual del juego
+            if nodo.get_attr("tablero") == self.boardState:
+                self.nodo_actual_partida_arbol_de_desiciones = nodo
+                self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones # También actualiza el nodo de la vista del árbol
+                break
+        else:
+            # Esto NO debería pasar si el árbol se cargó correctamente y mejor_movimiento_IA funciona bien
+            print("IA: ¡Advertencia! No se encontró el nodo hijo de la IA.")
+
         return mejor_movimiento
+        #    self.printSymbolX(areaX=mouse_x, areaY=mouse_y)
+
+        # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
       
      
     def cambiarPestañaPartida(self):
