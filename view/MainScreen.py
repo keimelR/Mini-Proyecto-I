@@ -1,3 +1,9 @@
+# Desarrollado por:
+# - Yorman Balan
+# - Keimel Rodríguez
+# - Google Deepmind
+
+
 import pygame
 import time
 import pygame.math
@@ -530,6 +536,7 @@ class MainScreen:
         self.boton_ver_nodo_padre.draw(self.display)
         self.boton_ver_estado_actual.draw(self.display)
 
+
     def cargar_tableros_arbol_de_desiciones(self):
         size_grid_tablero_padre = 50
         widthline_tablero_padre = 8
@@ -709,6 +716,7 @@ class MainScreen:
 
             # 5. Actualizar la posición X para el siguiente tablero
             lastX += tablero_draw.width + espacio_entre_tableros
+    # No te tengo aprecio funcion, te odio me sacaste muchas canas
 
     def cargar_pestaña_partida(self):
         # Dibujamos el texto "Bienvenido a:"

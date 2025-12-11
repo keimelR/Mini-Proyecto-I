@@ -1,3 +1,5 @@
+# Odio python con toda mi alma
+
 import pygame
 
 class Mark:
