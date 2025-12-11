@@ -137,6 +137,17 @@ class MainScreen:
                 print(f"X = {mouse_x} - Y = {mouse_y}")
 
                 if self.turn == PLAYER:
+                    # Boton de Reiniciar Juego
+                    if((mouse_x > 432 and mouse_x < 648) and (mouse_y > 605 and mouse_y < 645)):
+                        cleanBoard = pygame.Rect(
+                            self.leftBoard,
+                            self.topBoard,
+                            SIZE_GRID * 3,
+                            SIZE_GRID * 3
+                        )      
+                        pygame.draw.rect(self.display, self.colors.backgroundCard, cleanBoard)
+                        self.resetGame()
+                        
                     # Tablero
                     if((mouse_x > self.boardFront.left and mouse_x < self.boardFront.left + self.boardFront.width) and (mouse_y > self.boardFront.top and mouse_y < self.boardFront.top + self.boardFront.height)) and self.pestaña == PESTAÑA_PARTIDA:
                         # Obtenemos la cuadricula del tablero que fue marcada
@@ -144,7 +155,16 @@ class MainScreen:
 
                         if grid == -1:
                             return
-
+                        
+                        pygame.draw.rect(
+                            self.display,
+                            self.colors.terciary,
+                            (self.boardFront.grid_map[grid][0], self.boardFront.grid_map[grid][1], SIZE_GRID, SIZE_GRID),
+                            5,
+                        )
+                        pygame.display.flip()
+                        pygame.time.delay(100)
+                        
                         if self.boardState[grid] == IA or self.boardState[grid] == PLAYER:
                             # TODO. Pop-Up Anunciando que cuadricula ocupada
                             messagebox.showwarning("Cuadricula Ocupada", "La cuadricula seleccionada ya esta ocupada")
@@ -181,61 +201,75 @@ class MainScreen:
                                     self.existWinner = IA
 
                                     self.numberWinAgentAi += 1
-
+                                    
+                                    self.turn = PLAYER
+                                                            
                             if self.existWinner == 0:
                                 self.turn *= -1
-
-                    # Boton de Reiniciar Juego
-                    if((mouse_x > 432 and mouse_x < 648) and (mouse_y > 605 and mouse_y < 645)):
-                        cleanBoard = pygame.Rect(
-                            315,
-                            190,
-                            180,
-                            180
-                        )
-                        pygame.draw.rect(self.display, self.colors.backgroundCard, cleanBoard)
-                        self.resetGame()
-
+                    
     def turnoPlayer(self, grid: int):
         self.boardState[grid] = PLAYER
-        casilla = self.boardFront.grid_map[grid]
-
-        for nodo in self.nodo_actual_partida_arbol_de_desiciones.children:
-            print(nodo.get_attr("tablero"))
-            if nodo.get_attr("tablero") == self.boardState:
-                self.nodo_actual_partida_arbol_de_desiciones = nodo
-                break
-
-        self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
-        # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
-
-    def turnoIA(self):
-        mejor_movimiento = mejor_movimiento_IA(self.turno_n, self.boardState)
-
-        if mejor_movimiento == -1:
-            print("No se puede realizar la jugada")
-            print(self.boardState)
-            return
-        self.boardState[mejor_movimiento] = IA
-        casilla = self.boardFront.grid_map[mejor_movimiento]
-
-        # 2. Buscamos y actualizamos el nodo después del movimiento de la IA
-        for nodo in self.nodo_actual_partida_arbol_de_desiciones.children:
-            # Comparamos el tablero del nodo hijo con el estado actual del juego
-            if nodo.get_attr("tablero") == self.boardState:
-                self.nodo_actual_partida_arbol_de_desiciones = nodo
-                self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones # También actualiza el nodo de la vista del árbol
-                break
+        
+        # Actualizar el árbol de decisiones con el movimiento del jugador
+        if self.turno_n == 0:
+            # Primer movimiento: crear nodo raíz
+            self.nodo_actual_partida_arbol_de_desiciones = Node("a", tablero=self.boardState.copy(), jugador=PLAYER)
+            self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
         else:
-            # Esto NO debería pasar si el árbol se cargó correctamente y mejor_movimiento_IA funciona bien
-            print("IA: ¡Advertencia! No se encontró el nodo hijo de la IA.")
-
+            # Movimientos posteriores: buscar el nodo actual que coincida con el tablero
+            # O crear un nuevo nodo hijo
+            tablero_anterior = self.boardState.copy()
+            tablero_anterior[grid] = VACIO  # Estado antes del movimiento
+            
+            # Buscar si ya existe un nodo con el estado anterior
+            nodo_encontrado = None
+            # Buscar en todos los nodos del árbol
+            if hasattr(self.nodo_actual_arbol_de_desiciones, 'leaves'):
+                for nodo in self.nodo_actual_arbol_de_desiciones.leaves:
+                    if nodo.get_attr("tablero") == tablero_anterior:
+                        nodo_encontrado = nodo
+                        break
+            
+            if nodo_encontrado:
+                # Crear nuevo nodo hijo
+                nuevo_nodo = Node(f"p{self.turno_n}_{grid}", 
+                                tablero=self.boardState.copy(), 
+                                profundidad=self.turno_n, 
+                                parent=nodo_encontrado, 
+                                jugador=PLAYER)
+                self.nodo_actual_arbol_de_desiciones = nuevo_nodo
+                self.nodo_actual_partida_arbol_de_desiciones = nuevo_nodo
+            else:
+                # Crear nuevo árbol desde el estado actual
+                self.nodo_actual_partida_arbol_de_desiciones = Node("raiz_actual", 
+                                                tablero=self.boardState.copy(), 
+                                                jugador=PLAYER)
+                self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
+     
+    def turnoIA(self):
+        # Asegurarse de que tenemos un árbol
+        if self.nodo_actual_arbol_de_desiciones is None:
+            self.nodo_actual_partida_arbol_de_desiciones = Node("raiz", tablero=self.boardState.copy(), jugador=PLAYER)
+            self.nodo_actual_arbol_de_desiciones = self.nodo_actual_partida_arbol_de_desiciones
+        
+        # Obtener el mejor movimiento desde el estado actual
+        mejor_movimiento = mejor_movimiento_IA(self.turno_n, self.nodo_actual_arbol_de_desiciones)
+        
+        if mejor_movimiento != -1:
+            self.boardState[mejor_movimiento] = IA
+            
+            # Actualizar el árbol con el movimiento de la IA
+            nuevo_nodo = Node(f"ia{self.turno_n}_{mejor_movimiento}", 
+                            tablero=self.boardState.copy(), 
+                            profundidad=self.turno_n + 1, 
+                            parent=self.nodo_actual_arbol_de_desiciones, 
+                            jugador=IA)
+            self.nodo_actual_arbol_de_desiciones = nuevo_nodo
+            self.nodo_actual_partida_arbol_de_desiciones = nuevo_nodo
+        
         return mejor_movimiento
-        #    self.printSymbolX(areaX=mouse_x, areaY=mouse_y)
-
-        # Modificamos el estado del tablero en memoria con la jugada en la cuadricula realizada
-
-
+      
+     
     def cambiarPestañaPartida(self):
         self.pestaña = PESTAÑA_PARTIDA
         print("Partida")
@@ -248,7 +282,12 @@ class MainScreen:
         self.existWinner = 0
         self.turn = PLAYER
         self.boardState = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-
+        self.turno_n = 0 
+        
+        # Resetear los nodos del árbol
+        self.nodo_actual_partida_arbol_de_desiciones = None
+        self.nodo_actual_arbol_de_desiciones = None
+        
         self.boardFront.draw(self.leftBoard, self.topBoard, 60, 10)
 
     def print(
@@ -358,15 +397,17 @@ class MainScreen:
 
     def effectWinDiagonalRight(self):
         if (self.winDiagonalRight()):
+            print("Este es el bug")
             grid_map = self.boardFront.grid_map
 
             cantidad_de_pasos = 180
             for pasos in range(cantidad_de_pasos):
                 pygame.draw.line(
                     self.display,
-                    (255,0,0),
+                    (255, 0, 0),
+                #    self.boardFront.agentO.color if self.turn == PLAYER else self.boardFront.agentX.color,
                     (grid_map[6][0] + 10, grid_map[6][3] - 10),
-                    (grid_map[2][2] - 10, grid_map[2][3] + 10),
+                    (grid_map[2][2] - 10, grid_map[2][1] + 10),
                     5
                 )
                 pygame.display.flip()
@@ -678,7 +719,7 @@ class MainScreen:
         # Contador de Victorias del Usuario
         self.print(
             typeFont=TypeFont.TITTLE_LARGE,
-            text="00",
+            text=f"{self.numberWinUser}",
             areaX=435,
             areaY=480,
             align="center"
@@ -686,7 +727,7 @@ class MainScreen:
 
         self.print(
             typeFont=TypeFont.TITTLE_LARGE,
-            text="00",
+            text=f"{self.numberWinAgentAi}",
             areaX=710,
             areaY=480,
             align="center"
@@ -700,14 +741,29 @@ class MainScreen:
             align="center",
             color=(100, 100,100)
         )
+        
+        titulo = ""
+        if (self.turno_n + 1) % 11 == 0:
+            titulo = "Empate"
+        elif self.existWinner == PLAYER:
+            titulo = "¡Ha ganado el jugador!"
+        elif self.existWinner == IA:
+            titulo = "¡Ha ganado el agente AI!"
 
+        self.drawTitleCard(
+            typeFont=TypeFont.HEADLINE,
+            text=titulo,
+            coordinates=(self.widht // 2, 83 + 20),
+            align="center"
+        )
+        """
         self.drawTitleCard(
             typeFont=TypeFont.HEADLINE,
             text="Turno: Usuario" if self.turn == PLAYER else "Turno: Agente AI",
             coordinates=(self.widht // 2, 83 + 20),
             align="center"
         )
-
+        """ 
         buttonRestart = pygame.Rect(
             self.widht * 0.4,
             605,
