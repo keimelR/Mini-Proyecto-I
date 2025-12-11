@@ -1,5 +1,7 @@
+from typing import Callable
 import pygame
 from model.Mark import Mark 
+from bigtree import Node
 
 class BoardFront:
     def __init__(
@@ -8,6 +10,8 @@ class BoardFront:
         colorSymbolX: pygame.Color, 
         colorSymbolO: pygame.Color,
         screen: pygame.Surface,
+        accion: Callable = None,
+        nodo: Node = None
     ):
         """
         Inicializa el tablero gráfico y los agentes X y O.
@@ -26,8 +30,18 @@ class BoardFront:
         self.height = 0
         self.left = 0
         self.top = 0
+        self.accion = accion
+        self.rect = None
+        
+        self.nodo = nodo
         
         self.grid_map = {}
+
+    def handle_event(self, event):        
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # Ejecutar la acción si se hace clic
+            if self.rect.collidepoint(event.pos) and self.accion:
+                self.accion(self.nodo) # Llama a la función asignada
 
     def draw(
         self,
@@ -49,6 +63,7 @@ class BoardFront:
         self.height = self.width
         self.left = left
         self.top = top
+        self.rect = pygame.Rect(self.left, self.top, self.width, self.height)
         
         self.grid_map = {
             0: (left, top, left + sizeGrid, top + sizeGrid),
