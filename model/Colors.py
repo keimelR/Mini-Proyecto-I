@@ -20,3 +20,7 @@ class Colors:
         self.amarillo = (255,255,0)
         self.rojo = (255,0,0)
         self.azul = (0,0,255)
+        
+        
+        # Colores de prueba
+        self.bkg = (34, 40, 49)
