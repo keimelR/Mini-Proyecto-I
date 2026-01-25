@@ -27,9 +27,8 @@ class IconButton:
         if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
             rect_container_button = self.rect_button_container()
             if rect_container_button.collidepoint(event.pos):
-                self.contador = self.contador + 1
-                print(f"[INFO] - Model.IconButton - Numero de Presiones en el Boton: {self.contador}")
-                # Llama a la función asignada sólo si es callable
+        #        self.contador = self.contador + 1
+        #        print(f"[INFO] - Model.IconButton - Numero de Presiones en el Boton: {self.contador}")
                 if callable(self.accion):
                     self.accion()
     
@@ -50,6 +49,7 @@ class IconButton:
             (text.get_width() + self.button_width, text.get_height() + self.button_height),
             pygame.SRCALPHA
         )
+    
     #    print(f"[INFO] - Model.IconButton - buttonContainerSurface: {buttonContainerSurface}")
 
         return buttonContainerSurface
@@ -111,40 +111,3 @@ class IconButton:
         self.draw_shadow_container()
         self.draw_text()
         self.draw_icon()
-    
-    
-    """
-    def __init__(self, x, y, ancho, alto, texto, color_normal, color_hover, color_texto, accion=None):
-        self.rect = pygame.Rect(x, y, ancho, alto)
-        self.texto = texto
-        self.color_normal = color_normal
-        self.color_hover = color_hover
-        self.color_actual = color_normal
-        self.accion = accion  # La función que se ejecuta al hacer clic
-        self.font = pygame.font.Font(None, 30)
-        self.left = x
-        self.top = y
-        self.width = ancho
-        self.height = alto
-        self.right = x + ancho
-        self.bottom = y + alto
-        self.color_texto = color_texto
-        self.surface = None
-
-    def draw(self, surface):
-        # 1. Dibujar el cuerpo del botón
-        pygame.draw.rect(surface, self.color_actual, self.rect, border_radius=5)
-
-        self.surface = surface
-        # 2. Renderizar y dibujar el texto
-        text_surface = self.font.render(self.texto, True, self.color_texto)
-        text_rect = text_surface.get_rect(center=self.rect.center)
-        surface.blit(text_surface, text_rect)
-
-    def handle_event(self, event):        
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # Ejecutar la acción si se hace clic
-            if self.rect.collidepoint(event.pos) and self.accion:
-                self.accion() # Llama a la función asignada
-                
-    """

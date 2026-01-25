@@ -2,15 +2,17 @@ from view.MainScreen import MainScreen
 from view.HomeScreen import HomeScreen
 from view.AboutScreen import AboutScreen
 from view.GameScreen import GameScreen
+from view.RuleScreen import RuleScreen
+
 from tkinter import Tk
 
 # Ocultamos la ventana de Tkinter (si es necesaria)
 root = Tk()
 root.withdraw()
 
-mainScreen: MainScreen = MainScreen()
-mainScreen.on_execute()
-"""
+# mainScreen: MainScreen = MainScreen()
+# mainScreen.on_execute()
+
 # Diccionario con las escenas
 scenes = {}
 
@@ -18,7 +20,8 @@ scenes = {}
 scenes["home_screen"] = HomeScreen(scenes)
 scenes["about_screen"] = AboutScreen(scenes)
 scenes["game_screen"] = GameScreen(scenes)
-
+scenes["rule_screen"] = RuleScreen(scenes
+                                   )
 # Escena inicial
 scenes["current"] = "home_screen"
 
@@ -36,4 +39,3 @@ while scenes.get("running", False):
     # Cada escena debe implementar on_execute y salir cuando quiera ceder el control
     if hasattr(scene, "on_execute"):
         scene.on_execute()
-"""

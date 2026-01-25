@@ -21,6 +21,7 @@ class HomeScreen:
         self.scenes = scenes
         
     def go_to(self, scene_name):
+        print(f"Accediendo a {scene_name}")
         # Indica la escena destino y sale del loop para ceder el control
         self.scenes["current"] = scene_name
         self.running = False
@@ -36,6 +37,7 @@ class HomeScreen:
         self.on_init()
         
         # Cargar la Imagen de Logo
+        self.images.draw(self.images.logo, 30, 30, self.WIDTH // 2, self.HEIGHT // 6, self.display)
         image = pygame.image.load(self.images.logo)
         imageRect = image.get_rect()
         imageRect.center = (self.WIDTH // 2, self.HEIGHT // 6)
@@ -47,35 +49,40 @@ class HomeScreen:
 
         # Iconos Buttons
         iniciarJuegoIconButton = IconButton(
-            text_button = "Jugar con la AI", text_color = (57, 62, 70), left = self.WIDTH // 2, top = self.HEIGHT // 2,
-            button_width = 120, button_height = 30, button_color = (238, 238, 238), button_shadow_color = (8, 217, 214), button_shadow_height = 5,
-            icon = self.images.iconPerson, icon_width = 20, icon_height = 20, display = self.display,
+            text_button = "Jugar con la AI", text_color = (57, 62, 70), left = self.WIDTH // 2, top = (self.HEIGHT * 0.5),
+            button_width = 130, button_height = 30, button_color = (238, 238, 238), button_shadow_color = (8, 217, 214), button_shadow_height = 5,
+            icon = self.images.robot, icon_width = 25, icon_height = 25, display = self.display,
             accion=lambda: self.go_to("game_screen")
         )
         
+        reglas_juego_icon_button = IconButton(
+            text_button = "Reglas del Juego", text_color = (57, 62, 70), left = self.WIDTH // 2, top = (self.HEIGHT * 0.75),
+            button_width = 120, button_height = 30, button_color = (238, 238, 238), button_shadow_color = (8, 217, 214), button_shadow_height = 5,
+            icon = self.images.libro, icon_width = 25, icon_height = 25, display = self.display,
+            accion=lambda: self.go_to("rule_screen")
+        )
+        
         acercaDeIconButton = IconButton(
-            text_button = "Acerca De", text_color = (57, 62, 70), left = self.WIDTH // 2, top = (self.HEIGHT * 3) / 4,
-            button_width = 200, button_height = 30, button_color = (238, 238, 238), button_shadow_color = (8, 217, 214), button_shadow_height = 5,
-            icon = self.images.iconAcercaDe, icon_width = 20, icon_height = 20, display = self.display,
+            text_button = "Acerca De", text_color = (57, 62, 70), left = self.WIDTH // 2, top = (self.HEIGHT * 0.85),
+            button_width = 210, button_height = 30, button_color = (238, 238, 238), button_shadow_color = (8, 217, 214), button_shadow_height = 5,
+            icon = self.images.iconAcercaDe, icon_width = 25, icon_height = 25, display = self.display,
             accion=lambda: self.go_to("about_screen")
         )
         while(self.running):
             for event in pygame.event.get():
                 self.on_event(event)
                 acercaDeIconButton.handle_event(event)
+                reglas_juego_icon_button.handle_event(event)
+                iniciarJuegoIconButton.handle_event(event)
                 
             self.display.fill(self.colors.bkg)
-         
             self.display.blit(image, imageRect)
-            
             self.display.blit(textHeader, rectHeader)
             
             iniciarJuegoIconButton.draw_icon_button()
-
-        #    botonIniciarPartida.draw(self.display)
-
+            reglas_juego_icon_button.draw_icon_button()
             acercaDeIconButton.draw_icon_button()
-            
+        
             pygame.display.flip()
             
         

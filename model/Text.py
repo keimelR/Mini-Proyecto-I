@@ -54,3 +54,14 @@ class Text:
             case _:
                 textDisplay = self.tittleMedium.render(text, False, color)
         return textDisplay
+
+    def rect_text(self, surface: pygame.Surface, left, top):
+        rect = surface.get_rect()
+        rect.left = left
+        rect.top = top
+        return rect
+
+    def draw(self, typeFont: TypeFont, text: str, color: pygame.Color, top, left, display: pygame.Surface):
+        surface = self.role(typeFont, text, color)
+        rect = self.rect_text(surface, left, top)
+        display.blit(surface, rect)
