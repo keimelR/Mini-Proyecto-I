@@ -22,9 +22,10 @@ class GameScreen:
         self.display = pygame.display.set_mode((1080, 720))
         self.running = False
 
-        self.bot = TicTacToeBot()
-        self.entrenamiento = Entrenamiento()
-        
+
+        if not hasattr(self, 'bot') or self.bot is None:
+            self.bot = TicTacToeBot()
+
         self.board = Board(345, 260, 120, 10, self.display)
         self.player_user = Player(self.images.symbol_x)
         self.player_bot = Player(self.images.symbol_o)
@@ -104,8 +105,6 @@ class GameScreen:
 
         # Dibujamos el Tablero
         self.board.draw()
-
-        self.entrenamiento.entrenar_bot(self.bot, 20000)
 
         while self.running:
             # Manejamos los eventos

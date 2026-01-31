@@ -1,3 +1,4 @@
+import time
 import numpy as np
 
 class TicTacToeBot:
@@ -103,7 +104,10 @@ class Entrenamiento:
                         bot.learn(board, reward, game_over)
 
                 current_player *= -1 # Cambio de turno
+                if i % 100 == 0:
+                    time.sleep(0.0001)
 
+        bot.epsilon = 0
         print("Entrenamiento finalizado.")
 
     def check_game_status(self, board):
