@@ -1,3 +1,4 @@
+import time
 import pygame
 
 from model.Text import Text, TypeFont
@@ -10,6 +11,7 @@ from model.ScoreCard import ScoreCard
 from model.Board import Board
 from model.Player import Player
 from constantes import *
+from qlearning import TicTacToeBot, Entrenamiento
 
 class GameScreen:
     def __init__(self, scenes):
@@ -19,6 +21,9 @@ class GameScreen:
         self.colors = Colors()
         self.display = pygame.display.set_mode((1080, 720))
         self.running = False
+
+        self.bot = TicTacToeBot()
+        self.entrenamiento = Entrenamiento()
         
         self.board = Board(345, 260, 120, 10, self.display)
         self.player_user = Player(self.images.symbol_x)
@@ -96,9 +101,12 @@ class GameScreen:
         # Dibujamos los IconButtons
         icon_button_home.draw_icon_button()
         icon_button_reset_game.draw_icon_button()
-        
+
         # Dibujamos el Tablero
         self.board.draw()
+
+        self.entrenamiento.entrenar_bot(self.bot, 20000)
+
         while self.running:
             # Manejamos los eventos
             for event in pygame.event.get():
@@ -111,15 +119,25 @@ class GameScreen:
                     grid = self.board.on_event(event)
                     if grid != None and not self.has_winner():
                         # Hacemos la Jugada
-                        self.play_turn(grid)
+                        self.player_turn(grid)
                         
                         # Actualizamos el Puntaje
-                        self.update_score()
+                        status_partida = self.update_score()
                         
                         # Cubrimos los Textos Generados del Turno y Ganador de la Partida
                         self.cover_text(pygame.Rect(430, 95, 220, 50))
                         self.cover_text(pygame.Rect(430, 170, 220, 50))
+
+                        if status_partida == EN_PARTIDA:
+                            self.bot_turn()
+                                
+                            # Actualizamos el Puntaje
+                            self.update_score()
                             
+                            # Cubrimos los Textos Generados del Turno y Ganador de la Partida
+                            self.cover_text(pygame.Rect(430, 95, 220, 50))
+                            self.cover_text(pygame.Rect(430, 170, 220, 50))
+
                 # Manejamos los eventos en los IconButtons
                 icon_button_home.handle_event(event)
                 icon_button_reset_game.handle_event(event)
@@ -174,9 +192,16 @@ class GameScreen:
             if self.turn == PLAYER:
                 self.number_win_user = self.number_win_user + 1
                 self.existWinner = PLAYER
+                return VICTORIA
             if self.turn == IA:
                 self.number_win_bot = self.number_win_bot + 1
                 self.existWinner = IA
+                return DERROTA
+
+        if 0 not in self.boardState:
+            return EMPATE
+        
+        return EN_PARTIDA
             
     def reset(self):
         self.turn = PLAYER
@@ -190,17 +215,32 @@ class GameScreen:
         self.board.reset()
         self.board.draw()      
     
-    def play_turn(self, grid):
-        symbol_current = self.player_user.image_symbol if self.turn == PLAYER else self.player_bot.image_symbol
+    def player_turn(self, grid):
+        symbol_current = self.player_user.image_symbol
                         
         self.board.append_movement(grid, symbol_current)
         self.board.draw_movement(grid, symbol_current)  
         self.boardState[grid] = self.turn
         
         if not self.has_winner():      
-            self.turn = IA if self.turn == PLAYER else PLAYER
+            self.turn = IA
             self.turno_n = self.turno_n + 1
+
             
+    def bot_turn(self):
+        time.sleep(2) # Simulacion de pensamiento
+
+        jugada = self.bot.jugada_bot(self.boardState)
+
+        self.board.append_movement(jugada, self.player_bot.image_symbol)
+        self.board.draw_movement(jugada, self.player_bot.image_symbol)  
+        self.boardState[jugada] = self.turn
+        
+        if not self.has_winner():      
+            self.turn = PLAYER
+            self.turno_n = self.turno_n + 1
+
+    
     def has_winner(self) -> bool:
         return self.winDiagonalLeft() or self.winDiagonalRight() or self.winHorizontal() or self.winVertical()
     
