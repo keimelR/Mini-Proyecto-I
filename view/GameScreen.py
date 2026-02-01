@@ -1,5 +1,8 @@
+import math
 import time
 import pygame
+import matplotlib.pyplot as plt
+import numpy as np
 
 from model.Text import Text, TypeFont
 from model.Images import Images
@@ -35,6 +38,33 @@ class GameScreen:
         self.number_win_user = 0
         self.number_win_bot = 0
         self.existWinner = 0
+
+        # --- Variables para la animación de carga ---
+        self.bot_thinking = False
+        self.think_start_time = 0
+        self.think_duration = 2000  # 2 segundos en milisegundos
+
+        self.btn_heatmap = pygame.Rect(1080 - 180, 20, 150, 45)
+
+    def draw_loading_animation(self):
+        """Dibuja un arco giratorio que indica que el bot está procesando"""
+        center_x, center_y = 200, 540 # Posición arriba del tablero
+        rect = pygame.Rect(center_x - 25, center_y - 25, 55, 55)
+        pygame.draw.rect(self.display, self.colors.bkg, rect)
+
+        
+        # El ángulo depende del tiempo actual para crear rotación constante
+        angle = (pygame.time.get_ticks() / 3) % 360
+        
+        start_angle = math.radians(angle)
+        end_angle = math.radians(angle + 280) # Un arco de 280 grados
+        rect2 = pygame.Rect(center_x - 25, center_y - 25, 50, 50)
+        
+        # Dibujamos el arco de carga
+        pygame.draw.arc(self.display, (255, 46, 99), rect2, start_angle, end_angle, 5)
+        
+        # Texto de estado debajo del arco
+        self.text.draw(TypeFont.HEADLINE, "PENSANDO...", (238, 238, 238), center_y - 60, center_x - 65, self.display)
 
     def go_to(self, scene_name):
         """
@@ -75,6 +105,10 @@ class GameScreen:
         score_card_user.draw_score_card()
         score_card_bot.draw_score_card()
 
+        pygame.draw.rect(self.display, (0, 173, 181), self.btn_heatmap, border_radius=8)
+    # Usamos tu objeto self.text para mantener la consistencia
+        self.text.draw(TypeFont.HEADLINE, "VER HEATMAP", (255, 255, 255), 32, 1080 - 165, self.display)
+
     
     def on_execute(self):  
         # IconButton para Regresar a HomeScreen
@@ -106,41 +140,48 @@ class GameScreen:
         # Dibujamos el Tablero
         self.board.draw()
 
+
         while self.running:
+            current_time = pygame.time.get_ticks()
+
+            if self.bot_thinking and (current_time - self.think_start_time >= self.think_duration):
+                self.execute_bot_move()
+
             # Manejamos los eventos
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
                     if isinstance(self.scenes, dict):
                         self.scenes["running"] = False
+                # Bloqueamos la interacción del usuario mientras el bot piensa
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    # Obtenemos la casilla
-                    grid = self.board.on_event(event)
-                    if grid != None and not self.has_winner():
-                        # Hacemos la Jugada
-                        self.player_turn(grid)
-                        
-                        # Actualizamos el Puntaje
-                        status_partida = self.update_score()
-                        
-                        # Cubrimos los Textos Generados del Turno y Ganador de la Partida
-                        self.cover_text(pygame.Rect(430, 95, 220, 50))
-                        self.cover_text(pygame.Rect(430, 170, 220, 50))
+                    if self.btn_heatmap.collidepoint(event.pos) and not self.bot_thinking:
+                        self.mostrar_heatmap()
+                        continue
 
-                        if status_partida == EN_PARTIDA:
-                            self.bot_turn()
-                                
-                            # Actualizamos el Puntaje
-                            self.update_score()
+                    if not self.bot_thinking:
+                        grid = self.board.on_event(event)
+                        if grid != None and not self.has_winner():
+                            self.player_turn(grid)
+                            status_partida = self.update_score()
                             
-                            # Cubrimos los Textos Generados del Turno y Ganador de la Partida
+                            # Limpiar áreas de texto
                             self.cover_text(pygame.Rect(430, 95, 220, 50))
                             self.cover_text(pygame.Rect(430, 170, 220, 50))
+
+                            if status_partida == EN_PARTIDA:
+                                # Iniciamos el "tiempo de pensamiento"
+                                self.bot_thinking = True
+                                self.think_start_time = pygame.time.get_ticks()
+                            
 
                 # Manejamos los eventos en los IconButtons
                 icon_button_home.handle_event(event)
                 icon_button_reset_game.handle_event(event)
                 
+            
+            if self.bot_thinking:
+                self.draw_loading_animation()
             self.draw()
             pygame.display.flip()
     
@@ -153,6 +194,29 @@ class GameScreen:
         """
         pygame.draw.rect(self.display, self.colors.bkg, rect)
             
+    def mostrar_heatmap(self):
+        estado = tuple(self.boardState)
+        # Consultar la tabla Q del bot
+        q_values = self.bot.q_table.get(estado, np.zeros(9))
+        
+        if estado not in self.bot.q_table:
+            print("Estado no explorado por el bot.")
+
+        grid_q = q_values.reshape((3, 3))
+
+        plt.figure("Análisis de la IA", figsize=(6, 5))
+        im = plt.imshow(grid_q, cmap='RdYlGn', interpolation='nearest')
+        
+        for i in range(3):
+            for j in range(3):
+                plt.text(j, i, f'{grid_q[i, j]:.2f}', ha="center", va="center", 
+                        color="black", fontsize=10, fontweight='bold')
+
+        plt.colorbar(im, label='Valor Q (Ecuación de Bellman)')
+        plt.title(f"Conocimiento de la IA para este tablero")
+        plt.tight_layout()
+        plt.show() # Esto abrirá la ventana de Matplotlib
+
     def text_turn(self) -> str:
         """
         Genera un Mensaje Descriptivo Indicando qué Entidad tiene el Control del Turno Actual en el Juego.
@@ -225,19 +289,30 @@ class GameScreen:
             self.turn = IA
             self.turno_n = self.turno_n + 1
 
-            
-    def bot_turn(self):
-        time.sleep(2) # Simulacion de pensamiento
-
+    def execute_bot_move(self):
+        """Realiza el movimiento lógico del bot tras la espera"""
         jugada = self.bot.jugada_bot(self.boardState)
 
         self.board.append_movement(jugada, self.player_bot.image_symbol)
         self.board.draw_movement(jugada, self.player_bot.image_symbol)  
-        self.boardState[jugada] = self.turn
+        self.boardState[jugada] = IA
+        
+        self.bot_thinking = False # Apagar animación
+        self.update_score()
         
         if not self.has_winner():      
             self.turn = PLAYER
-            self.turno_n = self.turno_n + 1
+            self.turno_n += 1
+
+        # Limpiar textos de estado
+        self.cover_text(pygame.Rect(430, 95, 220, 50))
+        self.cover_text(pygame.Rect(430, 170, 220, 50))
+
+        # Eliminamos la animacion de carga
+        center_x, center_y = 200, 500 # Posición central de la animacion de carga
+        rect = pygame.Rect(center_x - 100, center_y - 100, 220, 200)
+
+        pygame.draw.rect(self.display, self.colors.bkg, rect)
 
     
     def has_winner(self) -> bool:

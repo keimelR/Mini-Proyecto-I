@@ -1,37 +1,31 @@
 import time
 import numpy as np
+from minimax import mejor_movimiento_IA
 
 class TicTacToeBot:
-    def __init__(self, alpha=0.3, gamma=0.9, epsilon=0.1):
-        self.q_table = {}   # Memoria del bot
-        self.alpha = alpha   # Tasa de aprendizaje
-        self.gamma = gamma   # Descuento de recompensas futuras
-        self.epsilon = epsilon # Probabilidad de explorar (azar)
-        
+    def __init__(self, alpha=0.5, gamma=0.9, epsilon=0.9): # Alpha más alto al inicio
+        self.q_table = {}
+        self.alpha = alpha
+        self.gamma = gamma
+        self.epsilon = epsilon
         self.last_tabla = None
         self.last_jugada = None
 
     def get_estado(self, board):
-        # Convertimos tu lista boardState en una tupla para que sea usable como llave
         return tuple(board)
 
-    def jugada_bot(self, board):
+    def jugada_bot(self, board, explorar=True):
         state = self.get_estado(board)
-        
-        # Si no conocemos este estado, inicializamos sus 9 movimientos en 0.0
         if state not in self.q_table:
             self.q_table[state] = np.zeros(9)
 
-        # Identificar casillas vacías (donde tu boardState tiene un 0)
         available_moves = [i for i, val in enumerate(board) if val == 0]
 
-        # Decisión: ¿Explorar (azar) o Explotar (mejor movimiento)?
-        if np.random.uniform(0, 1) < self.epsilon:
+        # Solo exploramos si estamos entrenando
+        if explorar and np.random.uniform(0, 1) < self.epsilon:
             action = np.random.choice(available_moves)
         else:
-            # Buscamos el valor máximo solo entre las casillas disponibles
             q_values = self.q_table[state]
-            # Llenamos las casillas ocupadas con un valor muy bajo para que no las elija
             masked_q = np.full(9, -np.inf)
             for move in available_moves:
                 masked_q[move] = q_values[move]
@@ -42,73 +36,75 @@ class TicTacToeBot:
         return action
 
     def learn(self, current_board, recompensa, game_over):
-        """
-        Ajusta la Q-Table usando la recompensa recibida.
-        """
         if self.last_tabla is None:
             return
 
-        estado = self.get_estado(current_board)
-        if estado not in self.q_table:
-            self.q_table[estado] = np.zeros(9)
+        estado_actual = self.get_estado(current_board)
+        if estado_actual not in self.q_table:
+            self.q_table[estado_actual] = np.zeros(9)
 
-        # Valor Q que queremos actualizar
         ultimo_q = self.q_table[self.last_tabla][self.last_jugada]
         
-        # Valor máximo futuro
         if game_over:
-            q_maximo_futuro = 0 # No hay más movimientos
+            q_maximo_futuro = 0
         else:
-            q_maximo_futuro = np.max(self.q_table[estado])
+            # IMPORTANTE: Aquí buscamos el valor del SIGUIENTE estado
+            q_maximo_futuro = np.max(self.q_table[estado_actual])
 
-        # Fórmula de Q-Learning (Ecuación de Bellman)
-        nuevo_q = ultimo_q + self.alpha * (recompensa + self.gamma * q_maximo_futuro - ultimo_q)
-        self.q_table[self.last_tabla][self.last_jugada] = nuevo_q
+        # Ecuación de Bellman
+        self.q_table[self.last_tabla][self.last_jugada] += self.alpha * (
+            recompensa + self.gamma * q_maximo_futuro - ultimo_q
+        )
 
 class Entrenamiento:
     def entrenar_bot(self, bot: TicTacToeBot, episodes=20000):
+        # Configuración de Epsilon
+        epsilon_start = bot.epsilon  # Empieza 100% azar
+        epsilon_end = 0.01   # Termina 1% azar
+        decay_rate = 0.0005  # Controla qué tan rápido baja
+        
         print(f"Entrenando al bot durante {episodes} partidas...")
         
         for i in range(episodes):
-            # 1. Reiniciar tablero para nueva partida
+            # Aplicamos la reducción gradual (Decaimiento Exponencial)
+            bot.epsilon = epsilon_end + (epsilon_start - epsilon_end) * np.exp(-decay_rate * i)
+            
             board = [0, 0, 0, 0, 0, 0, 0, 0, 0]
             game_over = False
-            
-            # Alternar quién empieza para que aprenda ambas posiciones
             current_player = 1 if i % 2 == 0 else -1 
             
             while not game_over:
-                available_moves = [idx for idx, val in enumerate(board) if val == 0]
-                
-                if not available_moves:
-                    break
-
                 if current_player == 1:
-                    # TURNO DEL BOT
+                    # TURNO DEL BOT (Aprendizaje activo)
                     action = bot.jugada_bot(board)
                     board[action] = 1
-                    
-                    # Verificar si ganó tras su movimiento
                     reward, game_over = self.check_game_status(board)
+                    # El bot solo debe aprender de sus consecuencias
                     bot.learn(board, reward, game_over)
                 else:
-                    # TURNO DEL OPONENTE (Simulamos un jugador aleatorio o con estrategia)
-                    # Es importante que el bot aprenda de las consecuencias de los actos del rival
-                    action = np.random.choice(available_moves)
-                    board[action] = -1
+                    # TURNO DEL OPONENTE (Self-Play)
+                    if episodes < 5000:
+                        action = mejor_movimiento_IA(1, board)
+                    else:
+                        if np.random.random() < 0.5:
+                            action = np.random.choice([idx for idx, val in enumerate(board) if val == 0])
+                        else:
+                            action = bot.jugada_bot(board)
+
                     
-                    # Verificar si el oponente ganó
+                    board[action] = -1
                     reward, game_over = self.check_game_status(board)
-                    # Si el rival gana, el bot recibe recompensa negativa por su acción anterior
+                    
+                    # Si el oponente gana, el bot debe aprender que su jugada anterior fue MALA
                     if game_over:
                         bot.learn(board, reward, game_over)
 
-                current_player *= -1 # Cambio de turno
-                if i % 100 == 0:
-                    time.sleep(0.0001)
+                current_player *= -1
+            if i % 100 == 0:
+                print("Episode: " + str(i))
 
-        bot.epsilon = 0
-        print("Entrenamiento finalizado.")
+        bot.epsilon = 0 # IA lista para competir sin errores
+        print(f"Entrenamiento finalizado. Epsilon final: {bot.epsilon}")
 
     def check_game_status(self, board):
         """
@@ -127,9 +123,9 @@ class Entrenamiento:
                 if board[combo[0]] == 1: # Ganó el bot
                     return 1.0, True
                 else: # Ganó el humano/rival
-                    return -1.0, True
+                    return -10.0, True
                     
         if 0 not in board: # Empate
-            return 0.1, True # Pequeña recompensa por no perder
+            return 0.5, True # Pequeña recompensa por no perder
             
-        return 0.0, False # El juego sigue
+        return -0.01, False # El juego sigue

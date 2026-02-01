@@ -2,39 +2,33 @@ from bigtree import Node
 from constantes import *
 # Los players son PLAYER y la IA es 1 (Asumiendo que IA=1 y PLAYER=-1 para Minimax)
 
-def minimax(tablero: list[int], turno: int, profundidad: int):
-    # Esta función se mantiene para propósitos de la utilidad mejor_movimiento_IA.
-    # No es la que asigna los valores a los nodos, sino la que calcula el puntaje puro.
-    analisis_victoria = detectar_victoria(tablero)
-    if analisis_victoria != 0 or not any(x == VACIO for x in tablero):
-        return (analisis_victoria)
-    
-    if turno == PLAYER:
-        mejor_puntaje = float('inf')
-        for i in range(9):
-            if tablero[i] == VACIO:
-                tablero[i] = PLAYER
-                
-                resultado = minimax(tablero, IA, profundidad=profundidad + 1)
-                
-                tablero[i] = VACIO
-                mejor_puntaje = min(mejor_puntaje, resultado)
-        return mejor_puntaje
-    
-    elif turno == IA:
+def minimax(tablero, turno, alfa, beta):
+    analisis = detectar_victoria(tablero)
+    if analisis != 0: return analisis
+    if VACIO not in tablero: return 0
+
+    if turno == IA:
         mejor_puntaje = -float('inf')
         for i in range(9):
             if tablero[i] == VACIO:
                 tablero[i] = IA
-                
-                resultado = minimax(tablero, PLAYER, profundidad + 1)
-                
+                puntos = minimax(tablero, PLAYER, alfa, beta)
                 tablero[i] = VACIO
-                mejor_puntaje = max(mejor_puntaje, resultado)
+                mejor_puntaje = max(mejor_puntaje, puntos)
+                alfa = max(alfa, mejor_puntaje)
+                if beta <= alfa: break # Poda
         return mejor_puntaje
     else:
-        print("Esto no deberia de pasar WTF")
-        exit()
+        mejor_puntaje = float('inf')
+        for i in range(9):
+            if tablero[i] == VACIO:
+                tablero[i] = PLAYER
+                puntos = minimax(tablero, IA, alfa, beta)
+                tablero[i] = VACIO
+                mejor_puntaje = min(mejor_puntaje, puntos)
+                beta = min(beta, mejor_puntaje)
+                if beta <= alfa: break # Poda
+        return mejor_puntaje
 
 # Funcion recursiva, debe de devolver la mejor jugada que puede realizar la IA, el valor a devolver es un int
 def mejor_movimiento_IA(profundidad: int, tablero: list[int]):

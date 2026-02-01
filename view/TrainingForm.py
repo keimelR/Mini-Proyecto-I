@@ -33,7 +33,7 @@ class TrainingForm:
             "alpha": {"rect": pygame.Rect(0, 0, 140, 30), "text": str(self.bot.alpha), "active": False},
             "gamma": {"rect": pygame.Rect(0, 0, 140, 30), "text": str(self.bot.gamma), "active": False},
             "epsilon": {"rect": pygame.Rect(0, 0, 140, 30), "text": str(self.bot.epsilon), "active": False},
-            "episodes": {"rect": pygame.Rect(0, 0, 140, 30), "text": "20000", "active": False}, # Nuevo
+            "episodes": {"rect": pygame.Rect(0, 0, 140, 30), "text": "10000", "active": False}, # Nuevo
         }
         
         self.apply_button = {"rect": pygame.Rect(0, 0, 120, 40), "text": "Entrenar"}
@@ -50,7 +50,7 @@ class TrainingForm:
         self.apply_button["rect"].midtop = (self.form_rect.centerx - 70, self.form_rect.bottom - 65)
         self.close_button["rect"].midtop = (self.form_rect.centerx + 70, self.form_rect.bottom - 65)
 
-    def guardar_conocimiento(bot: TicTacToeBot, filename="q_table.json"):
+    def guardar_conocimiento(self, bot, filename="q_table.json"): # Agrega self
         # Convertimos las llaves (tuplas) a strings para que JSON las acepte
         data_to_save = {str(key): value.tolist() for key, value in bot.q_table.items()}
         with open(filename, "w") as f:
@@ -65,11 +65,11 @@ class TrainingForm:
             
             # Validación simple para episodios
             ep_text = self.input_fields["episodes"]["text"]
-            num_episodes = int(ep_text) if ep_text.isdigit() else 20000
+            num_episodes = int(ep_text) if ep_text.isdigit() else 10000
             
             self.entrenador.entrenar_bot(self.bot, episodes=num_episodes)
             
-            # self.guardar_conocimiento(self.bot)
+            self.guardar_conocimiento(self.bot)
         except Exception as e:
             print(f"Error en entrenamiento: {e}")
         
