@@ -15,6 +15,7 @@ from model.Board import Board
 from model.Player import Player
 from constantes import *
 from qlearning import TicTacToeBot, Entrenamiento
+from minimax import mejor_movimiento_IA
 
 class GameScreen:
     def __init__(self, scenes):
@@ -292,6 +293,7 @@ class GameScreen:
     def execute_bot_move(self):
         """Realiza el movimiento lógico del bot tras la espera"""
         jugada = self.bot.jugada_bot(self.boardState)
+        # jugada = mejor_movimiento_IA(0, self.boardState)
 
         self.board.append_movement(jugada, self.player_bot.image_symbol)
         self.board.draw_movement(jugada, self.player_bot.image_symbol)  

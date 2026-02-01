@@ -3,50 +3,59 @@ from constantes import *
 # Los players son PLAYER y la IA es 1 (Asumiendo que IA=1 y PLAYER=-1 para Minimax)
 
 def minimax(tablero, turno, alfa, beta):
-    analisis = detectar_victoria(tablero)
-    if analisis != 0: return analisis
-    if VACIO not in tablero: return 0
+    # 1. Comprobar estado terminal
+    analisis_victoria = detectar_victoria(tablero)
+    if analisis_victoria != 0:
+        return analisis_victoria
+    if VACIO not in tablero:
+        return 0 # Empate
 
     if turno == IA:
         mejor_puntaje = -float('inf')
         for i in range(9):
             if tablero[i] == VACIO:
                 tablero[i] = IA
-                puntos = minimax(tablero, PLAYER, alfa, beta)
+                # Pasamos alfa y beta a la llamada recursiva
+                resultado = minimax(tablero, PLAYER, alfa, beta)
                 tablero[i] = VACIO
-                mejor_puntaje = max(mejor_puntaje, puntos)
+                mejor_puntaje = max(mejor_puntaje, resultado)
                 alfa = max(alfa, mejor_puntaje)
-                if beta <= alfa: break # Poda
+                if beta <= alfa:
+                    break # Poda
         return mejor_puntaje
-    else:
+    
+    else: # Turno del PLAYER
         mejor_puntaje = float('inf')
         for i in range(9):
             if tablero[i] == VACIO:
                 tablero[i] = PLAYER
-                puntos = minimax(tablero, IA, alfa, beta)
+                # Pasamos alfa y beta a la llamada recursiva
+                resultado = minimax(tablero, IA, alfa, beta)
                 tablero[i] = VACIO
-                mejor_puntaje = min(mejor_puntaje, puntos)
+                mejor_puntaje = min(mejor_puntaje, resultado)
                 beta = min(beta, mejor_puntaje)
-                if beta <= alfa: break # Poda
+                if beta <= alfa:
+                    break # Poda
         return mejor_puntaje
 
-# Funcion recursiva, debe de devolver la mejor jugada que puede realizar la IA, el valor a devolver es un int
-def mejor_movimiento_IA(profundidad: int, tablero: list[int]):
+def mejor_movimiento_IA(profundidad, tablero):
     mejor_puntaje = -float('inf')
     mejor_movimiento = -1
     
+    # Valores iniciales para la poda
+    alfa = -float('inf')
+    beta = float('inf')
     
     for i in range(9):
         if tablero[i] == VACIO:
             tablero[i] = IA
-            
-            resultado = minimax(tablero, PLAYER, profundidad)
-                
+            # Llamada inicial con alfa y beta
+            resultado = minimax(tablero, PLAYER, alfa, beta)
             tablero[i] = VACIO
             
             if resultado > mejor_puntaje:
-                mejor_movimiento = i
                 mejor_puntaje = resultado
+                mejor_movimiento = i
     return mejor_movimiento
         
 

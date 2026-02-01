@@ -83,13 +83,10 @@ class Entrenamiento:
                     bot.learn(board, reward, game_over)
                 else:
                     # TURNO DEL OPONENTE (Self-Play)
-                    if episodes < 5000:
-                        action = mejor_movimiento_IA(1, board)
+                    if np.random.random() < 0.3:
+                        action = np.random.choice([idx for idx, val in enumerate(board) if val == 0])
                     else:
-                        if np.random.random() < 0.5:
-                            action = np.random.choice([idx for idx, val in enumerate(board) if val == 0])
-                        else:
-                            action = bot.jugada_bot(board)
+                        action = mejor_movimiento_IA(1, board)
 
                     
                     board[action] = -1
