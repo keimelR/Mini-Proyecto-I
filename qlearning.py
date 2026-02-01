@@ -1,9 +1,10 @@
-import time
 import numpy as np
+
 from minimax import mejor_movimiento_IA
 
+
 class TicTacToeBot:
-    def __init__(self, alpha=0.5, gamma=0.9, epsilon=0.9): # Alpha más alto al inicio
+    def __init__(self, alpha=0.5, gamma=0.9, epsilon=0.9):  # Alpha más alto al inicio
         self.q_table = {}
         self.alpha = alpha
         self.gamma = gamma
@@ -44,7 +45,7 @@ class TicTacToeBot:
             self.q_table[estado_actual] = np.zeros(9)
 
         ultimo_q = self.q_table[self.last_tabla][self.last_jugada]
-        
+
         if game_over:
             q_maximo_futuro = 0
         else:
@@ -56,51 +57,86 @@ class TicTacToeBot:
             recompensa + self.gamma * q_maximo_futuro - ultimo_q
         )
 
+
 class Entrenamiento:
     def entrenar_bot(self, bot: TicTacToeBot, episodes=20000):
         # Configuración de Epsilon
         epsilon_start = bot.epsilon  # Empieza 100% azar
-        epsilon_end = 0.01   # Termina 1% azar
+        epsilon_end = 0.01  # Termina 1% azar
         decay_rate = 0.0005  # Controla qué tan rápido baja
-        
+
         print(f"Entrenando al bot durante {episodes} partidas...")
-        
+
+        # Definición de las probabilidades de oponente
+        opponent_probabilities = {
+            "self": 0.50,
+            "random": 0.30,
+            "minimax": 0.20,
+        }
+
+        opponent_choices = list(opponent_probabilities.keys())
+        opponent_weights = list(opponent_probabilities.values())
+
         for i in range(episodes):
-            # Aplicamos la reducción gradual (Decaimiento Exponencial)
-            bot.epsilon = epsilon_end + (epsilon_start - epsilon_end) * np.exp(-decay_rate * i)
-            
+            bot.epsilon = epsilon_end + (epsilon_start - epsilon_end) * np.exp(
+                -decay_rate * i
+            )
+
             board = [0, 0, 0, 0, 0, 0, 0, 0, 0]
             game_over = False
-            current_player = 1 if i % 2 == 0 else -1 
-            
+            current_player = 1
+
             while not game_over:
                 if current_player == 1:
-                    # TURNO DEL BOT (Aprendizaje activo)
                     action = bot.jugada_bot(board)
+
                     board[action] = 1
                     reward, game_over = self.check_game_status(board)
-                    # El bot solo debe aprender de sus consecuencias
-                    bot.learn(board, reward, game_over)
-                else:
-                    # TURNO DEL OPONENTE (Self-Play)
-                    if np.random.random() < 0.3:
-                        action = np.random.choice([idx for idx, val in enumerate(board) if val == 0])
-                    else:
-                        action = mejor_movimiento_IA(1, board)
 
-                    
-                    board[action] = -1
-                    reward, game_over = self.check_game_status(board)
-                    
-                    # Si el oponente gana, el bot debe aprender que su jugada anterior fue MALA
-                    if game_over:
+                    if not game_over:
                         bot.learn(board, reward, game_over)
 
-                current_player *= -1
-            if i % 100 == 0:
-                print("Episode: " + str(i))
+                else:
+                    opponent_type = np.random.choice(
+                        opponent_choices, p=opponent_weights
+                    )
 
-        bot.epsilon = 0 # IA lista para competir sin errores
+                    action = -1  # Inicializar acción del oponente
+
+                    if opponent_type == "self":
+                        available_moves = [
+                            idx for idx, val in enumerate(board) if val == 0
+                        ]
+                        if available_moves:
+                            action = np.random.choice(available_moves)
+
+                    elif opponent_type == "random":
+                        available_moves = [
+                            idx for idx, val in enumerate(board) if val == 0
+                        ]
+                        if available_moves:
+                            action = np.random.choice(available_moves)
+
+                    elif opponent_type == "minimax":
+                        action = mejor_movimiento_IA(-1, board)
+
+                    if action != -1:  # Si se eligió una acción válida
+                        board[action] = -1
+                        reward, game_over = self.check_game_status(board)
+
+                        if game_over:
+                            bot.learn(board, reward, game_over)
+                        else:
+                            pass
+
+                current_player *= -1
+            if not game_over:
+                pass
+
+            if i % 1000 == 0:
+                print(f"Episode: {i}. Epsilon: {bot.epsilon:.4f}")
+
+        bot.epsilon = 0
         print(f"Entrenamiento finalizado. Epsilon final: {bot.epsilon}")
 
     def check_game_status(self, board):
@@ -110,19 +146,27 @@ class Entrenamiento:
         """
         # Lógica de victoria (filas, columnas, diagonales)
         win_conditions = [
-            [0,1,2], [3,4,5], [6,7,8], # Horizontales
-            [0,3,6], [1,4,7], [2,5,8], # Verticales
-            [0,4,8], [2,4,6]           # Diagonales
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],  # Horizontales
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],  # Verticales
+            [0, 4, 8],
+            [2, 4, 6],  # Diagonales
         ]
-        
+
         for combo in win_conditions:
             if board[combo[0]] == board[combo[1]] == board[combo[2]] != 0:
-                if board[combo[0]] == 1: # Ganó el bot
+                if board[combo[0]] == 1:  # Ganó el bot (Jugador 1)
                     return 1.0, True
-                else: # Ganó el humano/rival
-                    return -10.0, True
-                    
-        if 0 not in board: # Empate
-            return 0.5, True # Pequeña recompensa por no perder
-            
-        return -0.01, False # El juego sigue
+                else:  # Ganó el humano/rival (Jugador -1)
+                    return -1, True
+
+        if 0 not in board:  # Empate
+            return 0.5, True
+
+        return (
+            0,
+            False,
+        )
