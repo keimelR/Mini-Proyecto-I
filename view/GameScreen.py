@@ -46,7 +46,10 @@ class GameScreen:
         self.think_start_time = 0
         self.think_duration = 2000  # 2 segundos en milisegundos
 
-        self.btn_heatmap = pygame.Rect(1080 - 180, 20, 150, 45)
+        self.btn_heatmap = pygame.Rect(1080 - 210, 20, 200, 50)
+
+        # En __init__
+        self.history_states = []
 
     def draw_loading_animation(self):
         """Dibuja un arco giratorio que indica que el bot está procesando"""
@@ -109,7 +112,7 @@ class GameScreen:
 
         pygame.draw.rect(self.display, (0, 173, 181), self.btn_heatmap, border_radius=8)
     # Usamos tu objeto self.text para mantener la consistencia
-        self.text.draw(TypeFont.HEADLINE, "VER HEATMAP", (255, 255, 255), 32, 1080 - 165, self.display)
+        self.text.draw(TypeFont.HEADLINE, "VER HEATMAP", (255, 255, 255), 32, 1080 - 200, self.display)
 
     
     def on_execute(self):  
@@ -201,27 +204,47 @@ class GameScreen:
         pygame.draw.rect(self.display, self.colors.bkg, rect)
             
     def mostrar_heatmap(self):
-        estado = tuple(self.boardState)
-        # Consultar la tabla Q del bot
-        q_values = self.bot.q_table.get(estado, np.zeros(9))
+        if not self.history_states:
+            print("No hay jugadas registradas.")
+            return
+
+        num_jugadas = len(self.history_states)
+        cols = 3
+        rows = math.ceil(num_jugadas / cols)
         
-        if estado not in self.bot.q_table:
-            print("Estado no explorado por el bot.")
-
-        grid_q = q_values.reshape((3, 3))
-
-        plt.figure("Análisis de la IA", figsize=(6, 5))
-        im = plt.imshow(grid_q, cmap='RdYlGn', interpolation='nearest')
+        # Creamos la figura
+        fig, axes = plt.subplots(rows, cols, figsize=(15, rows * 4), squeeze=False)
+        fig.suptitle("Análisis de Q-Table por Movimiento", fontsize=16, fontweight='bold')
         
-        for i in range(3):
-            for j in range(3):
-                plt.text(j, i, f'{grid_q[i, j]:.2f}', ha="center", va="center", 
-                        color="black", fontsize=10, fontweight='bold')
+        # .flatten() convierte cualquier matriz (1x1, 2x2, 3x3) en una lista simple
+        axes_flat = axes.flatten()
 
-        plt.colorbar(im, label='Valor Q (Ecuación de Bellman)')
-        plt.title(f"Conocimiento de la IA para este tablero")
-        plt.tight_layout()
-        plt.show() # Esto abrirá la ventana de Matplotlib
+        for i, data in enumerate(self.history_states):
+            estado_tuple = tuple(data["board"])
+            jugador = data["player"]
+            
+            # Consultar la Q-Table
+            q_values = self.bot.q_table.get(estado_tuple, np.zeros(9))
+            grid_q = q_values.reshape((3, 3))
+
+            # Ahora axes_flat[i] siempre será un objeto de ejes válido
+            im = axes_flat[i].imshow(grid_q, cmap='RdYlGn', interpolation='nearest')
+            
+            axes_flat[i].set_title(f"Turno {i+1}: Movió {jugador}", fontsize=10)
+            
+            # Dibujar valores Q
+            for r in range(3):
+                for c in range(3):
+                    val = grid_q[r, c]
+                    axes_flat[i].text(c, r, f'{val:.2f}', ha="center", va="center", 
+                                    color="black", fontsize=9, fontweight='bold')
+
+        # Eliminar los cuadros blancos sobrantes
+        for j in range(num_jugadas, len(axes_flat)):
+            fig.delaxes(axes_flat[j])
+
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.show()
 
     def text_turn(self) -> str:
         """
@@ -280,6 +303,7 @@ class GameScreen:
             self.think_start_time = pygame.time.get_ticks()
 
         self.boardState = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.history_states = []
         self.turno_n = 0   
         self.existWinner = 0
         
@@ -295,6 +319,10 @@ class GameScreen:
         self.board.append_movement(grid, symbol_current)
         self.board.draw_movement(grid, symbol_current)  
         self.boardState[grid] = self.turn
+        self.history_states.append({
+        "board": list(self.boardState),
+        "player": "TÚ (Humano)"
+    })
         
         if not self.has_winner():      
             self.turn = IA
@@ -302,13 +330,16 @@ class GameScreen:
 
     def execute_bot_move(self):
         """Realiza el movimiento lógico del bot tras la espera"""
-        jugada = self.bot.jugada_bot(self.boardState)
+        jugada = self.bot.jugada_bot(self.boardState, False)
         # jugada = mejor_movimiento_IA(0, self.boardState)
 
         self.board.append_movement(jugada, self.player_bot.image_symbol)
         self.board.draw_movement(jugada, self.player_bot.image_symbol)  
         self.boardState[jugada] = IA
-        
+        self.history_states.append({
+        "board": list(self.boardState),
+        "player": "IA (Bot)"
+    })
         self.bot_thinking = False # Apagar animación
         self.update_score()
         

@@ -1,3 +1,6 @@
+import ast
+import json
+import os
 import random
 import time
 
@@ -109,6 +112,30 @@ class Entrenamiento:
             )
 
         return 0.0, False
+
+    def cargar_archivo(self, bot, filename="q_table.json"):
+        """
+        Carga el conocimiento previo desde un archivo JSON.
+        Convierte las claves de string a tuplas y los valores a numpy arrays.
+        """
+        if os.path.exists(filename):
+            try:
+                with open(filename, "r") as f:
+                    data_cargada = json.load(f)
+                
+                nueva_q_table = {}
+                for k_str, v_list in data_cargada.items():
+                    # ast.literal_eval convierte el string "(0, 0, 1...)" en una tupla real
+                    key_tupla = ast.literal_eval(k_str)
+                    # Convertimos la lista de vuelta a un array de numpy
+                    nueva_q_table[key_tupla] = np.array(v_list, dtype=float)
+                
+                bot.q_table = nueva_q_table
+                print(f"--- Conocimiento cargado: {len(bot.q_table)} estados recuperados ---")
+            except Exception as e:
+                print(f"Error al cargar el archivo de conocimiento: {e}")
+        else:
+            print("No se encontró un archivo de conocimiento previo. Iniciando desde cero.")
 
     def entrenar_bot(self, bot: TicTacToeBot, episodes=20000):
         epsilon_start = 1.0

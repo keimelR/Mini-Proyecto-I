@@ -1,3 +1,4 @@
+import os
 import pygame
 from model.Text import Text, TypeFont
 from model.Images import Images
@@ -7,7 +8,7 @@ from model.IconButton import IconButton
 from model.ScoreCard import ScoreCard
 
 # --- IMPORTACIONES PARA EL MODELO ---
-from qlearning import TicTacToeBot
+from qlearning import TicTacToeBot, Entrenamiento
 from view.TrainingForm import TrainingForm
 
 class HomeScreen:
@@ -20,6 +21,8 @@ class HomeScreen:
         self.colors = Colors()
         self.display = None
         self.scenes = scenes
+
+        self.entrenamiento = Entrenamiento()
         
         # --- ATRIBUTOS DEL BOT Y FORMULARIO ---
         self.bot_q = TicTacToeBot()
@@ -40,15 +43,20 @@ class HomeScreen:
         self.running = True
         self.scenes["display"] = self.display
         
+        if os.path.exists("q_table.json"):
+            self.entrenamiento.cargar_archivo(self.bot_q)
+            self.bot_q.epsilon = 0
+            print("Archivo q_table.json cargado")
+
         # Inicializamos el formulario de entrenamiento
         # Usamos una fuente estándar de Pygame para el formulario
         fuente_form = pygame.font.SysFont("Arial", 22)
         self.training_form = TrainingForm(self.display, self.bot_q, fuente_form)
         
     def abrir_configuracion(self):
-        """Abre el modal de ajuste de parámetros de la IA"""
         if self.training_form:
             self.training_form.is_open = True
+
 
     def on_execute(self):
         self.on_init()
