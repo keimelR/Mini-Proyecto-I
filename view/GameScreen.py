@@ -26,6 +26,7 @@ class GameScreen:
         self.display = pygame.display.set_mode((1080, 720))
         self.running = False
 
+        self.initial_turn = IA
 
         if not hasattr(self, 'bot') or self.bot is None:
             self.bot = TicTacToeBot()
@@ -33,7 +34,7 @@ class GameScreen:
         self.board = Board(345, 260, 120, 10, self.display)
         self.player_user = Player(self.images.symbol_x)
         self.player_bot = Player(self.images.symbol_o)
-        self.turn = PLAYER
+        self.turn = IA
         self.turno_n = 0
         self.boardState = [0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.number_win_user = 0
@@ -141,6 +142,10 @@ class GameScreen:
         # Dibujamos el Tablero
         self.board.draw()
 
+
+        if self.turn == IA:
+            self.bot_thinking = True
+            self.think_start_time = pygame.time.get_ticks()
 
         while self.running:
             current_time = pygame.time.get_ticks()
@@ -268,7 +273,12 @@ class GameScreen:
         return EN_PARTIDA
             
     def reset(self):
-        self.turn = PLAYER
+        self.turn = self.initial_turn
+
+        if self.turn == IA:
+            self.bot_thinking = True
+            self.think_start_time = pygame.time.get_ticks()
+
         self.boardState = [0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.turno_n = 0   
         self.existWinner = 0
