@@ -110,48 +110,108 @@ class Entrenamiento:
 
         return 0.0, False
 
-    def entrenar_bot(self, bot: TicTacToeBot, episodes=10000):
+    def entrenar_bot(self, bot: TicTacToeBot, episodes=20000):
         epsilon_start = 1.0
-        epsilon_end = 0.05  # Dejar un poco de exploración siempre es bueno
+        epsilon_end = 0.05
         decay_step = (epsilon_start - epsilon_end) / episodes
 
-        print(f"--- INICIANDO ENTRENAMIENTO ({episodes} episodios) ---")
+        print(f"--- INICIANDO ENTRENAMIENTO PRO ({episodes} episodios) ---")
+        print("Distribución: 20% Minimax | 20% Random | 60% Self-Play")
+        print("Roles: 50% Jugador 1 (X) | 50% Jugador 2 (O)")
 
         for i in range(episodes):
             bot.epsilon = max(epsilon_end, bot.epsilon - decay_step)
 
+            bot_player = 1 if random.random() < 0.5 else -1
+            opp_player = -1 if bot_player == 1 else 1
+
+            # 2. Definir Tipo de Oponente
+            dice = random.random()
+            if dice < 0.20:
+                opponent_type = "minimax"
+            elif dice < 0.40:
+                opponent_type = "random"
+            else:
+                opponent_type = "self"
+
             board = [0] * 9
             game_over = False
+            current_player = 1  # Siempre empieza el 1 (X)
+
+            bot.last_tabla = None
+            bot.last_jugada = None
 
             while not game_over:
-                # --- TURNO BOT ---
-                action = bot.jugada_bot(board)
-                board[action] = 1
+                if current_player == bot_player:
+                    action = bot.jugada_bot(board)
+                    board[action] = current_player
 
-                reward, game_over = self.check_game_status(board)
+                    # Verificar resultado
+                    reward_abs, game_over = self.check_game_status(board)
 
-                if game_over:
-                    # Si el bot gana con su movimiento, aprende y termina
-                    bot.learn(board, reward, game_over)
-                    break
+                    bot_reward = reward_abs * bot_player
 
-                action_opp = mejor_movimiento_IA(-1, board)
-                board[action_opp] = -1
+                    if game_over:
+                        bot.learn(board, bot_reward, game_over)
+                        break
 
-                reward, game_over = self.check_game_status(board)
-
-                if game_over:
-                    bot.learn(board, reward, game_over)
                 else:
-                    bot.learn(board, 0.0, False)
+                    if opponent_type == "minimax":
+                        # Minimax juega como 'opp_player'
+                        action_opp = mejor_movimiento_IA(opp_player, board)
 
-            if i % 1000 == 0:
+                    elif opponent_type == "random":
+                        avail_moves = [k for k, x in enumerate(board) if x == 0]
+                        action_opp = random.choice(avail_moves)
+
+                    else:  # SELF / SOMBRA
+                        avail_moves = [k for k, x in enumerate(board) if x == 0]
+
+                        # La Sombra explora o ataca
+                        if random.random() < bot.epsilon:
+                            action_opp = random.choice(avail_moves)
+                        else:
+                            state = bot.get_estado(board)
+                            if state in bot.q_table:
+                                q_vals = bot.q_table[state]
+                                best_val_opp = float("inf")  # Buscamos el mínimo
+                                best_move_opp = random.choice(avail_moves)
+
+                                for move in avail_moves:
+                                    if q_vals[move] < best_val_opp:
+                                        best_val_opp = q_vals[move]
+                                        best_move_opp = move
+                                action_opp = best_move_opp
+                            else:
+                                action_opp = random.choice(avail_moves)
+
+                    # Ejecutar jugada oponente
+                    board[action_opp] = current_player
+
+                    # Verificar resultado
+                    reward_abs, game_over = self.check_game_status(board)
+                    bot_reward = reward_abs * bot_player  # Ajuste de perspectiva
+
+                    if game_over:
+                        # Si el oponente gana o empata, el bot aprende
+                        bot.learn(board, bot_reward, game_over)
+                    else:
+                        # Si el juego sigue, el bot actualiza su predicción
+                        # basándose en cómo quedó el tablero tras el ataque enemigo
+                        if bot.last_tabla is not None:
+                            bot.learn(board, 0.0, False)
+
+                # Cambiar turno
+                current_player *= -1
+
+            if i % 2000 == 0:
                 print(
-                    f"Episodio: {i}. Q-Table size: {len(bot.q_table)}. Epsilon: {bot.epsilon:.4f}"
+                    f"Episodio: {i}. Q-Table: {len(bot.q_table)}. Epsilon: {bot.epsilon:.4f} "
+                    f"(Role: {'P1' if bot_player == 1 else 'P2'}, Rival: {opponent_type})"
                 )
 
         bot.epsilon = 0
-        print("--- Entrenamiento finalizado ---")
+        print(f"--- Entrenamiento finalizado. Q-Table: {len(bot.q_table)} ---")
 
 
 def display_board(board):
@@ -194,9 +254,6 @@ def play_interactive_game(bot: TicTacToeBot):
         board = [0] * 9
         game_over = False
 
-        # Puedes cambiar esto para decidir quién empieza
-        # 1 = Bot empieza, -1 = Humano empieza
-        # Por defecto alternamos o dejamos fijo al Bot para probar su defensa
         current_player = 1
 
         print("\n--- NUEVA PARTIDA ---")
@@ -259,9 +316,11 @@ def play_interactive_game(bot: TicTacToeBot):
 
 
 if __name__ == "__main__":
-    # Aumenté un poco los episodios porque Minimax es un maestro estricto
     bot = TicTacToeBot(alpha=0.5, gamma=0.7, epsilon=1.0)
     trainer = Entrenamiento()
-    trainer.entrenar_bot(bot, episodes=20000)
+    inicio = time.time()
+    trainer.entrenar_bot(bot, episodes=30000)
+    fin = time.time()
+    print(fin - inicio)
 
     play_interactive_game(bot)
